@@ -1,0 +1,8 @@
+{
+    "name": "TomChaton/clingDB",
+    "autoload": {
+        "psr-0" : {
+            "TomChaton\\clingDB" : "src"
+        }
+    }
+}

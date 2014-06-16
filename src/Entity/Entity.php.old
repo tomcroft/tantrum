@@ -1,0 +1,103 @@
+<?php
+
+namespace priism\Classes\Database;
+
+class PDO
+{
+	const KEY_PRIMARY = 'PRI';
+	const KEY_FOREIGN = 'FOREIGN';
+	const KEY_UNIQUE = 'UNIQUE';
+	
+	const REL_TYPE_ONE_TO_ONE = '121';
+	const REL_TYPE_ONE_TO_MANY = '12n';
+	const REL_TYPE_MANY_TO_MANY = 'n2n';
+	
+	const TYPE_STRING = 'string';
+	const TYPE_INTEGER = 'integer';
+	
+	protected $resConnection;
+	protected $strPrimaryKey;
+	protected $arrFields = array();
+	protected $arrJoins = array();
+	protected $arrData = array();
+
+	public function __construct($strSchema)
+	{
+		$strDataSourceName = strtolower($GLOBALS['objConfig']->arrDatabase['strPDODriver']).':host='.$GLOBALS['objConfig']->arrDatabase['strHost'].';dbname='.$strSchema;
+		$arrOptions = array(
+			\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+		); 
+		$this->resConnection = new \PDO($strDataSourceName, $GLOBALS['objConfig']->arrDatabase['strUserName'], $GLOBALS['objConfig']->arrDatabase['strPassword'], $arrOptions);
+		$this->Init();
+	}
+	
+	protected function Init()
+	{
+		//ToDo: site specific. Next: load this from file or cache.
+		$this->AddField('intSiteId', self::TYPE_INTEGER, self::KEY_PRIMARY);
+		$this->AddField('vchSiteName', self::TYPE_STRING, self::KEY_UNIQUE);
+		$this->AddField('intPrimaryDomainNameId', self::TYPE_INTEGER, self::KEY_FOREIGN, 'tblDomainName.intDomainNameId', self::REL_TYPE_ONE_TO_ONE);
+		$this->AddField('intMailDomainNameId', self::TYPE_INTEGER, self::KEY_FOREIGN, 'tblDomainName.intDomainNameId', self::REL_TYPE_ONE_TO_ONE);
+	}
+	
+	protected function AddField($strFieldName, $strType, $strKeyType=null, $strLookup=null, $strRelationshipType=null)
+	{
+		$this->arrFields[$strFieldName] = array (
+			'Type' => $strType,
+			'Value' => null
+		);
+		if(!is_null($strKeyType))
+		{
+			switch($strKeyType)
+			{
+				case self::KEY_PRIMARY:
+					$this->strPrimaryKey = $strFieldName;
+					break;
+				case self::KEY_FOREIGN:
+					if(!is_null($strLookup)){
+						$arrLookup = explode('.',$strLookup);
+						if(sizeof($arrLookup) > 0 || sizeof($arrLookup) < 4)
+						{
+							$arrLookup = array_reverse($arrLookup);
+							$this->arrJoins[$strFieldName] = array(
+								'Alias' => $arrLookup[0],
+								'Table' => $arrLookup[1],
+								'Schema' => $arrLookup[2]?:$this->strTable,
+								'Relationship' => $strRelationshipType
+							);
+						}
+						else
+						{
+							throw new \Exception('Lookup table not properly defined');
+						}
+					}
+					else
+					{
+						throw new \Exception('Foreign key without a table.');
+					}
+					break;
+				case self::KEY_UNIQUE:
+					//nothing doing at the moment
+					break;
+				default:
+					throw new \Exception('Key type unknown');
+					break;				
+			}
+		}
+	}
+	
+	public function __set($strKey, $mxdValue)
+	{
+		if(array_key_exists($strKey, $this->arrFields))
+		{
+			$this->arrData[$strKey] = $mxdValue;
+			return true;
+		}
+		return false;
+	}
+	
+	public function __get($strKey)
+	{
+		return $this->arrData[$strKey];
+	}
+}
