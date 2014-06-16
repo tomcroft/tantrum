@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChaton\clingDB\QueryBuilder;
+namespace TomChaton\ClingDB\QueryBuilder;
 	
 class Query 
 {

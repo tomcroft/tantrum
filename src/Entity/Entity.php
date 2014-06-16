@@ -1,8 +1,8 @@
 <?php
 
-namespace TomChaton\clingDB\Entity;
+namespace TomChaton\ClingDB\Entity;
 
-use TomChaton\clingDB\Exception;
+use TomChaton\ClingDB\Exception;
 
 class Entity 
 {

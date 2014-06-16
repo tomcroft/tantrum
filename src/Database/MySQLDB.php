@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChaton\clingDB\Database;
+namespace TomChaton\ClingDB\Database;
 
 class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 {

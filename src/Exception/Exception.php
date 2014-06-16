@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChaton\clingDB\Exception;
+namespace TomChaton\ClingDB\Exception;
 
 class Exception extends Exception 
 {

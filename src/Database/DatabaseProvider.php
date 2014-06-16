@@ -1,8 +1,8 @@
 <?php
 
-namespace TomChaton\clingDB\Database;
+namespace TomChaton\clingDB\Data	base	;
 
-use TomChaton\clingDB\Exception;
+use TomChaton\ClingDB\Exception;
 
 class DatabaseProvider
 {

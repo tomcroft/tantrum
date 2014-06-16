@@ -1,11 +1,11 @@
 <?php
 
-namespace TomChaton\clingDB\QueryBuilder;
+namespace TomChaton\ClingDB\QueryBuilder;
 
 class Fields
 {
 
-	use TomChaton\clingDB\Traits\Collection;
+	use TomChaton\ClingDB\Traits\Collection;
 
 	protected $arrFields = array();
 

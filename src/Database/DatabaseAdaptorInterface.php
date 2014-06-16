@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChaton\clingDB\Database;
+namespace TomChaton\ClingDB\Database;
 
 interface DatabaseAdaptorInterface
 {   

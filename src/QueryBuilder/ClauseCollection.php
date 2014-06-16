@@ -1,8 +1,8 @@
 <?php
 
-namespace TomChaton\clingDB\QueryBuilder;
+namespace TomChaton\ClingDB\QueryBuilder;
 
-use TomChaton\clingDB\Exception;
+use TomChaton\ClingDB\Exception;
 
 class ClauseCollection  
 {
