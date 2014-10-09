@@ -1,17 +1,17 @@
 <?php
 
-namespace TomChaton\ClingDB\Database;
+namespace tomcroft\tantrum\Database;
 
 interface DatabaseAdaptorInterface
 {   
     
-    function FormatSelect(Query $objQuery);
+    function FormatSelect(Query $query);
     
-    function FormatInsert(Query $objQuery);
+    function FormatInsert(Query $query);
     
-    function FormatUpdate(Query $objQuery);
+    function FormatUpdate(Query $query);
     
-    function FormatDelete(Query $objQuery);
+    function FormatDelete(Query $query);
     
-    function GetColumnDefinitions($strTable);
+    function GetColumnDefinitions($table);
 }

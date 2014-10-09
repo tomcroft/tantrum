@@ -2,7 +2,7 @@
 
 namespace tomcroft\tantrum\Exception;
 
-class Exception extends \Exception 
+class QueryException extends Exception 
 {
     
 }

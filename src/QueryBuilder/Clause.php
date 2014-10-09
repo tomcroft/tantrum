@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChaton\ClingDB\QueryBuilder;
+namespace tomcroft\tantrum\QueryBuilder;
 
 class Clause
 {
@@ -14,73 +14,73 @@ class Clause
 	const LESS_THAN = 102;
 	const GREATER_THAN = 103;
 	
-	protected $intType;
-	protected $intOperator;
-	protected $mxdLeft;
-	protected $mxdRight;
-	protected $bolEscape;
+	protected $type;
+	protected $operator;
+	protected $left;
+	protected $right;
+	protected $escape;
 	
-	public function __construct($intType, $bolEscape=true)
-	{
-		//@TODO: Subclass this
-		$this->intType = $intType;
-		$this->bolEscape = $bolEscape;
-	}
+	// public function __construct($type, $escape=true)
+	// {
+	// 	//@TODO: Subclass this
+	// 	$this->type = $type;
+	// 	$this->escape = $escape;
+	// }
 	
-	public function SetArgs($mxdLeft, $mxdRight, $intOperator)
+	public function SetArgs($left, $right, $operator)
 	{
-		$this->mxdLeft = $mxdLeft;
-		$this->mxdRight = $mxdRight;
-		$this->intOperator = $intOperator;
+		$this->left = $left;
+		$this->right = $right;
+		$this->operator = $operator;
 		return $this;
 	}
 	
-	public function GetType()
+	public function getType()
 	{
-		return $this->intType;
+		return $this->type;
 	}
 	
 	public function GetArgs()
 	{
-		return array($this->mxdLeft, $this->mxdRight);
+		return array($this->left, $this->right);
 	}
 	
 	public function GetOperator()
 	{
-		return $this->intOperator;
+		return $this->operator;
 	}
 	
 	public function Escape()
 	{
-		return $this->bolEscape;
+		return $this->escape;
 	}
 	
-	public static function Where($mxdLeft, $mxdRight, $intOperator=self::EQUALS, $bolEscape=true)
+	public static function Where($left, $right, $operator=self::EQUALS, $escape=true)
 	{
-		$objClause = new Clause(self::WHERE, $bolEscape);
-		$objClause->SetArgs($mxdLeft, $mxdRight, $intOperator);
-		$objClauseCollection = new ClauseCollection($objClause);
-		return $objClauseCollection;
+		$clause = new Clause(self::WHERE, $escape);
+		$clause->SetArgs($left, $right, $operator);
+		$clauseCollection = new ClauseCollection($clause);
+		return $clauseCollection;
 	}
 	
-	public static function On($mxdLeft, $mxdRight, $intOperator=self::EQUALS, $bolEscape=false)
+	public static function On($left, $right, $operator=self::EQUALS, $escape=false)
 	{
-		$objClause = new Clause(self::ON, $bolEscape);
-		$objClause->SetArgs($mxdLeft, $mxdRight, $intOperator);
-		$objClauseCollection = new ClauseCollection($objClause);
-		$objClauseCollection->setType(self::ON);
-		return $objClauseCollection;
+		$clause = new Clause(self::ON, $bscape);
+		$clause->SetArgs($left, $right, $operator);
+		$clauseCollection = new ClauseCollection($clause);
+		$clauseCollection->setType(self::ON);
+		return $clauseCollection;
 	}
 	
-	public static function _And($mxdLeft, $mxdRight, $intOperator=self::EQUALS, $bolEscape=true)
+	public static function _And($left, $right, $operator=self::EQUALS, $escape=true)
 	{
-		$objClause = new Clause(self::_AND, $bolEscape);
-		return $objClause->SetArgs($mxdLeft, $mxdRight, $intOperator);
+		$clause = new Clause(self::_AND, $escape);
+		return $clause->SetArgs($left, $right, $operator);
 	}
 	
-	public static function _Or($mxdLeft, $mxdRight, $intOperator=self::EQUALS, $bolEscape=true)
+	public static function _Or($left, $right, $operator=self::EQUALS, $escape=true)
 	{
-		$objClause = new Clause(self::_OR, $bolEscape);
-		return $objClause->SetArgs($mxdLeft, $mxdRight, $intOperator);
+		$clause = new Clause(self::_OR, $escape);
+		return $clause->SetArgs($left, $right, $operator);
 	}
 }

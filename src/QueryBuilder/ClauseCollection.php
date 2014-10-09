@@ -1,58 +1,58 @@
 <?php
 
-namespace TomChaton\ClingDB\QueryBuilder;
+namespace tomcroft\tantrum\QueryBuilder;
 
-use TomChaton\ClingDB\Exception;
+use tomcroft\tantrum\Exception;
 
 class ClauseCollection  
 {
 
-	use TomChaton\clingDB\Collection;
+	use tomcroft\tantrum\Collection;
 
-	protected $intType;
+	protected $type;
 	
-	public function __construct($objClause, $intType = Clause::WHERE)
+	public function __construct($clause, $type = Clause::WHERE)
 	{
-		$this->arrData[] = $objClause;
-		$this->intType = $intType;
+		$this->data[] = $clause;
+		$this->type = $yype;
 	}
 	
-	public function __call($strCall, $arrArguments)
+	public function __call($call, $arguments)
 	{
-		switch($strCall)
+		switch($call)
 		{
 			case 'And':
-				$objReflectionMethod = new \ReflectionMethod(__CLASS__, '_And');
+				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_And');
 			break;
 			case 'Or':
-				$objReflectionMethod = new \ReflectionMethod(__CLASS__, '_Or');
+				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_Or');
 			break;
 			default:
-				throw new Exception('Method not handled.');
+				throw new ClauseException('Method not handled.');
 			break;
 		}
-		return $objReflectionMethod->invokeArgs($this, $arrArguments);
+		return $reflectionMethod->invokeArgs($this, $arguments);
 	}
 	
-	public function _And($mxdLeft, $mxdRight=null, $intOperator = Clause::EQUALS, $bolEscape = true)
+	public function _And($left, $right=null, $operator = Clause::EQUALS, $escape = true)
 	{
-		$this->arrData[] = Clause::_And($mxdLeft, $mxdRight, $intOperator, $bolEscape);
+		$this->data[] = Clause::_And($left, $right, $operator, $escape);
 		return $this;
 	}
 	
-	public function _Or($mxdLeft, $mxdRight=null, $intOperator = Clause::EQUALS, $bolEscape = true)
+	public function _Or($left, $right=null, $operator = Clause::EQUALS, $escape = true)
 	{
-		$this->arrData[] = Clause::_Or($mxdLeft, $mxdRight, $intOperator, $bolEscape);
+		$this->data[] = Clause::_Or($left, $right, $operator, $escape);
 		return $this;
 	}
 	
-	public function SetType($intType)
+	public function SetType($type)
 	{
-		$this->intType = $intType;
+		$this->type = $type;
 	}
 	
 	public function GetType()
 	{
-		return $this->intType;
+		return $this->type;
 	}
 }
