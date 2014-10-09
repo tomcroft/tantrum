@@ -1,8 +1,8 @@
 <?php
 
-namespace TomChaton\clingDB\Data	base	;
+namespace tomcroft\tantrum\Database;
 
-use TomChaton\ClingDB\Exception;
+use tomcroft\tantrum\DatabaseException;
 
 class DatabaseProvider
 {
@@ -17,129 +17,129 @@ class DatabaseProvider
 	const TYPE_STRING = 'string';
 	const TYPE_INTEGER = 'integer';
 	
-	protected $strSchema;
-	protected $resConnection;
-	protected $objStatement;
-	protected $strPrimaryKey;
-	protected $arrFields = array();
-	protected $arrJoins = array();
-	protected $arrData = array();
+	protected $schema;
+	protected $connection;
+	protected $statement;
+	protected $primaryKey;
+	protected $fields = array();
+	protected $joins = array();
+	protected $data = array();
 
-	public function __construct($strDriver, $strSchema)
+	public function __construct($driver, $schema)
 	{
-		$this->strSchema = $strSchema;
-		$strDataSourceName = $strDriver.':host='.$GLOBALS['objConfig']->arrDatabase['strHost'].';dbname='.$strSchema;
-		$arrOptions = array(
+		$this->schema = $schema;
+		$dataSourceName = $driver.':host='.$GLOBALS['objConfig']->arrDatabase['strHost'].';dbname='.$schema;
+		$options = array(
 			\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
 		); 
-		$this->resConnection = new \PDO($strDataSourceName, $GLOBALS['objConfig']->arrDatabase['strUserName'], $GLOBALS['objConfig']->arrDatabase['strPassword'], $arrOptions);
+		$this->connection = new \PDO($dataSourceName, $GLOBALS['objConfig']->arrDatabase['strUserName'], $GLOBALS['objConfig']->arrDatabase['strPassword'], $options);
 	}
 	
-	public static function Get($strSchema)
+	public static function Get($schema)
 	{
-		$strClassName = __NAMESPACE__.'\\'.$GLOBALS['objConfig']->arrDatabase['strDriver'].'DB';
-		return new $strClassName($strSchema);
+		$className = __NAMESPACE__.'\\'.$GLOBALS['objConfig']->arrDatabase['strDriver'].'DB';
+		return new $className($schema);
 	}
 	
-	public function Query(Query $objQuery)
+	public function Query(Query $query)
 	{
-		switch($objQuery->getType())
+		switch($query->getType())
 		{
 			case Query::SELECT: 
-				$strQuery = $this->FormatSelect($objQuery);
-				$arrParameters = $objQuery->GetParameters();
+				$query = $this->FormatSelect($query);
+				$parameters = $query->GetParameters();
 				break;
 			case Query::INSERT:
-				$strQuery = $this->FormatInsert($objQuery);
-				$arrParameters = array_values($objQuery->getFields()->ToArray());
-				$arrParameters = !is_null($objQuery->GetDuplicateFieldsForUpdate())
-					? array_merge($arrParameters, array_values($objQuery->GetDuplicateFieldsForUpdate()->ToArray()))
-					: $arrParameters;
+				$queryString = $this->FormatInsert($query);
+				$parameters = array_values($query->getFields()->ToArray());
+				$parameters = !is_null($query->GetDuplicateFieldsForUpdate())
+					? array_merge($parameters, array_values($query->GetDuplicateFieldsForUpdate()->ToArray()))
+					: $parameters;
 				break;
 			case Query::DELETE:
-				$strQuery = $this->FormatDelete($objQuery);
-				$arrParameters = $objQuery->GetParameters();
+				$queryString = $this->FormatDelete($query);
+				$parameters = $query->GetParameters();
 				break;
 			case Query::UPDATE:
-				$strQuery = $this->FormatUpdate($objQuery);
-				$arrParameters = array_merge(array_values($objQuery->getFields()->ToArray()),$objQuery->GetParameters());
+				$query = $this->FormatUpdate($query);
+				$parameters = array_merge(array_values($query->getFields()->ToArray()),$query->GetParameters());
 				break;			
 			default:
-				throw new Exception('Query Type Not Handled');
+				throw new DatabaseException('Query Type Not Handled');
 				break;
 		}
 		try
 		{
-			$this->resConnection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false); 
-			if($this->objStatement = $this->resConnection->prepare($strQuery))
+			$this->connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false); 
+			if($this->statement = $this->connection->prepare($queryString))
 			{
-				$this->objStatement->execute($arrParameters);
-				return $this->CheckErrors($this->objStatement, $strQuery);
+				$this->statement->execute($parameters);
+				return $this->CheckErrors($this->statement, $queryString);
 			}
 			else
 			{
-				//$this->resConnection->debugDumpParams();
-				throw new Exception("Prepare statement failed:\r\n".print_r($this->resConnection->errorInfo(), 1)."\r\n".$strQuery);
+				//$this->connection->debugDumpParams();
+				throw new DatabaseException("Prepare statement failed:\r\n".print_r($this->connection->errorInfo(), 1)."\r\n".$queryString);
 			}
 		}
-		catch(PDOException $objException)
+		catch(PDOException $e)
 		{
-			throw new Exception($objException->getMessage());
+			throw new DatabaseException($e->getMessage());
 		}
 	}
 	
 	public function GetInsertId()
 	{
-		return $this->resConnection->lastInsertId(); 
+		return $this->connection->lastInsertId(); 
 	}
 	
 	public function GetAffectedRows()
 	{
-		return $this->objStatement->rowCount();
+		return $this->statement->rowCount();
 	}
 	
 	protected function GetConnection(){
-		if(isset($this->resConnection)){
-			return $this->resConnection;
+		if(isset($this->connection)){
+			return $this->connection;
 		} else {
-			$resConnection = $this->resConnection = $this->Connect();
+			$connection = $this->connection = $this->Connect();
 		}
-		return $resConnection;
+		return $connection;
 	}
 	
-	public function Fetch($strClassName=null, $arrConstructorArgs=array())
+	public function Fetch($className=null, $constructorArgs=array())
 	{
-		if(!is_null($strClassName))
+		if(!is_null($className))
 		{
-			$this->objStatement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $strClassName, $arrConstructorArgs);
+			$this->statement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $className, $constructorArgs);
 		}
 		else
 		{
-			$this->objStatement->setFetchMode(\PDO::FETCH_ASSOC);
+			$this->statement->setFetchMode(\PDO::FETCH_ASSOC);
 		}
-		return $this->objStatement->fetch();
+		return $this->statement->fetch();
 		
 	}
 	
-	public function FetchAll($strClassName=null, $arrConstructorArgs=array())
+	public function FetchAll($className=null, $constructorArgs=array())
 	{
-		if(!is_null($strClassName))
+		if(!is_null($className))
 		{
-			$this->objStatement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $strClassName, $arrConstructorArgs);
+			$this->statement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $className, $constructorArgs);
 		}
 		else
 		{
-			$this->objStatement->setFetchMode(\PDO::FETCH_ASSOC);
+			$this->statement->setFetchMode(\PDO::FETCH_ASSOC);
 		}
-		return $this->objStatement->fetchAll();
+		return $this->statement->fetchAll();
 	}
 	
-	protected function CheckErrors($objPDO, $strQuery=null)
+	protected function CheckErrors($pdo, $queryString)
 	{
-		$arrErrors = $objPDO->errorInfo();
-		if($arrErrors[0] > 0)
+		$errors = $pdo->errorInfo();
+		if($errors[0] > 0)
 		{
-			throw new Exception($arrErrors[2].":\r\n".$strQuery);
+			throw new DatabaseException($errors[2].":\r\n".$queryString);
 		}
 	}
 }

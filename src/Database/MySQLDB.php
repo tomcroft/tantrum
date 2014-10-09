@@ -1,124 +1,124 @@
 <?php
 
-namespace TomChaton\ClingDB\Database;
+namespace tomcroft\tantrum\Database;
 
 class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 {
-	protected $strSchema;
-	protected $arrNonEscapedStrings = array('NOW()', null);
+	protected $schema;
+	protected $nonEscapedStrings = array('NOW()', null);
 
- 	public function __construct($strSchema = 'dbApplications')
+ 	public function __construct($schema = 'dbApplications')
 	{
-		parent::__construct('mysql', $strSchema);
+		parent::__construct('mysql', $schema);
 	}
 	
-	public function FormatSelect(Query $objQuery)
+	public function FormatSelect(Query $query)
 	{
-		$strFields = !$objQuery->GetFields()->IsEmpty()?implode(','.PHP_EOL, array_keys($objQuery->GetFields()->ToArray())):'*';
-		$strQuery = 'SELECT '.PHP_EOL.$strFields.PHP_EOL.' FROM '.PHP_EOL.$objQuery->GetFrom();
-		$strQuery .= $objQuery->GetAlias()?' AS '.$objQuery->GetAlias().PHP_EOL:''.PHP_EOL;
+		$fields = !$query->GetFields()->IsEmpty()?implode(','.PHP_EOL, array_keys($query->GetFields()->ToArray())):'*';
+		$queryString = 'SELECT '.PHP_EOL.$fields.PHP_EOL.' FROM '.PHP_EOL.$query->GetFrom();
+		$queryString .= $query->GetAlias()?' AS '.$query->GetAlias().PHP_EOL:''.PHP_EOL;
 
-		foreach($objQuery->GetJoins() as $objJoin)
+		foreach($query->GetJoins() as $join)
 		{
-			$strQuery .= $this->FormatJoin($objJoin);
+			$queryString .= $this->FormatJoin($join);
 		}
-		$arrClauses = $objQuery->GetClauses();
+		$clauses = $query->GetClauses();
 
-		if(count($arrClauses) > 0)
+		if(count($clauses) > 0)
 		{
-			$strQuery .= ' WHERE ';
+			$queryString .= ' WHERE ';
 			
-			foreach($arrClauses as $mxdClause)
+			foreach($clauses as $clause)
 			{
-				if($mxdClause instanceof Clause)
+				if($clause instanceof Clause)
 				{
-					$strQuery .= $this->FormatClause($mxdClause);
+					$queryString .= $this->FormatClause($clause);
 				}
-				elseif($mxdClause instanceof ClauseCollection)
+				elseif($clause instanceof ClauseCollection)
 				{
-					$strQuery .= $this->FormatClauseCollection($mxdClause);
+					$queryString .= $this->FormatClauseCollection($clause);
 				}
 			}
 		}
-		$strQuery .= $this->FormatGroupBy($objQuery->GetGroupBy());
-		$strQuery .= $this->FormatOrderBy($objQuery->GetOrderBy());
-		$strQuery .= $this->FormatLimit($objQuery->GetStart(), $objQuery->GetOffset());
-		//_el($strQuery);
-		return $strQuery;
+		$queryString .= $this->FormatGroupBy($query->GetGroupBy());
+		$queryString .= $this->FormatOrderBy($query->GetOrderBy());
+		$queryString .= $this->FormatLimit($query->GetStart(), $query->GetOffset());
+		
+		return $queryString;
 	}
     
-  public function FormatInsert(Query $objQuery)
+  public function FormatInsert(Query $query)
   {
-  	$arrPlaceholders = array_fill(0, count($objQuery->GetFields()->ToArray()), '?');
-  	$strQuery = 'INSERT INTO '.$objQuery->GetFrom().
-  		' ('.implode(',',array_keys($objQuery->GetFields()->ToArray())).')'.
+  	$placeholders = array_fill(0, count($query->GetFields()->ToArray()), '?');
+  	$queryString = 'INSERT INTO '.$query->GetFrom().
+  		' ('.implode(',',array_keys($query->GetFields()->ToArray())).')'.
   		' VALUES '.
-  		' ('.implode(',', $arrPlaceholders).')';
-  	if(!is_null($objQuery->GetDuplicateFieldsForUpdate()))
+  		' ('.implode(',', $placeholders).')';
+  	if(!is_null($query->GetDuplicateFieldsForUpdate()))
   	{
-  		$strQuery .= ' ON DUPLICATE KEY UPDATE ';
-  		$arrFields = array();
-  		foreach(array_keys($objQuery->GetDuplicateFieldsForUpdate()->ToArray()) as $strKey)
+  		$queryString .= ' ON DUPLICATE KEY UPDATE ';
+  		$fields = array();
+  		foreach(array_keys($query->GetDuplicateFieldsForUpdate()->ToArray()) as $key)
   		{
-  			$arrFields[] = $strKey.' = ?';
+  			$fields[] = $key.' = ?';
 			}
-			$strQuery .= implode(',',$arrFields);
+			$queryString .= implode(',',$fields);
   	}
-  	return $strQuery;
+  	return $queryString;
   }
   
-  public function FormatDelete(Query $objQuery)
+  public function FormatDelete(Query $query)
   {
-  	$strQuery = 'DELETE FROM '.$objQuery->GetFrom();
-  	$strQuery .= $objQuery->GetAlias()?' AS '.$objQuery->GetAlias().PHP_EOL:''.PHP_EOL;
-  	foreach($objQuery->GetJoins() as $objJoin)
+  	$queryString = 'DELETE FROM '.$query->GetFrom();
+  	$queryString .= $query->GetAlias()?' AS '.$query->GetAlias().PHP_EOL:''.PHP_EOL;
+  	foreach($query->GetJoins() as $join)
 		{
-			$strQuery .= $this->FormatJoin($objJoin);
+			$queryString .= $this->FormatJoin($join);
 		}
-		$strQuery .= ' WHERE ';
-  	foreach($objQuery->GetClauses() as $mxdClause)
+		$queryString .= ' WHERE ';
+  	foreach($query->GetClauses() as $clause)
   	{
-  		if($mxdClause instanceof Clause)
+  		if($clause instanceof Clause)
   		{
-  			$strQuery .= $this->FormatClause($mxdClause);
+  			$queryString .= $this->FormatClause($clause);
   		}
-  		elseif($mxdClause instanceof ClauseCollection)
+  		elseif($clause instanceof ClauseCollection)
   		{
-  			$strQuery .= $this->FormatClauseCollection($mxdClause);
+  			$queryString .= $this->FormatClauseCollection($clause);
   		}
   	}
-  	$strQuery .= $this->FormatGroupBy($objQuery->GetGroupBy());
-	$strQuery .= $this->FormatOrderBy($objQuery->GetOrderBy());
-	$strQuery .= $this->FormatLimit($objQuery->GetStart(), $objQuery->GetOffset()); 
-  	return $strQuery;
+  	$queryString .= $this->FormatGroupBy($query->GetGroupBy());
+	$queryString .= $this->FormatOrderBy($query->GetOrderBy());
+	$queryString .= $this->FormatLimit($query->GetStart(), $query->GetOffset()); 
+  	return $queryString;
   }
    
-  public function FormatUpdate(Query $objQuery)
+  public function FormatUpdate(Query $query)
   {
-  	$strQuery = 'UPDATE '.$objQuery->GetFrom();
+  	$queryString = 'UPDATE '.$query->GetFrom();
   	
-  	$strQuery .= $objQuery->GetAlias()?' AS '.$objQuery->GetAlias().' SET '.PHP_EOL:' SET '.PHP_EOL;
+  	$queryString .= $query->GetAlias()?' AS '.$query->GetAlias().' SET '.PHP_EOL:' SET '.PHP_EOL;
   	
-  	$strQuery .= implode(' = ?, ', array_keys($objQuery->GetFields()->ToArray())).' = ?';
+  	$queryString .= implode(' = ?, ', array_keys($query->GetFields()->ToArray())).' = ?';
   	
-  	$strQuery .= ' WHERE ';
-  	foreach($objQuery->GetClauses() as $mxdClause)
+  	$queryString .= ' WHERE ';
+  	foreach($query->GetClauses() as $clause)
   	{
-  		if($mxdClause instanceof Clause)
+  		if($clause instanceof Clause)
   		{
-  			$strQuery .= $this->FormatClause($mxdClause);
+  			$queryString .= $this->FormatClause($clause);
   		}
-  		elseif($mxdClause instanceof ClauseCollection)
+  		elseif($clause instanceof ClauseCollection)
   		{
-  			$strQuery .= $this->FormatClauseCollection($mxdClause);
+  			$queryString .= $this->FormatClauseCollection($clause);
   		}
   	}
-  	return $strQuery;
+  	return $queryString;
   }
 	
-	public function GetColumnDefinitions($strTable)
+	public function GetColumnDefinitions($table)
 	{
-		$objQuery = Query::Select('information_schema.COLUMNS','c',
+		$query = Query::Select('information_schema.COLUMNS','c',
 			new Fields('c.COLUMN_NAME AS strColumnName',
 				'c.DATA_TYPE AS strDataType',
 				'IF(c.IS_NULLABLE="No",1,0) AS bolRequired',
@@ -134,13 +134,13 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 				'kcu.POSITION_IN_UNIQUE_CONSTRAINT AS intPositionInUniqueConstraint'))
 			->LeftJoin('information_schema.KEY_COLUMN_USAGE', Clause::On('kcu.COLUMN_NAME','c.COLUMN_NAME'), 'kcu')
 			->LeftJoin('information_schema.KEY_COLUMN_USAGE', Clause::On('kcu2.TABLE_SCHEMA','c.TABLE_NAME')->And('kcu2.COLUMN_NAME', 'c.COLUMN_NAME', Clause::EQUALS, false), 'kcu2')
-			->Where('c.TABLE_SCHEMA', $this->strSchema)
-			->And('c.TABLE_NAME', $strTable)
+			->Where('c.TABLE_SCHEMA', $this->schema)
+			->And('c.TABLE_NAME', $table)
 			->GroupBy('concat(c.COLUMN_NAME, c.TABLE_NAME, c.TABLE_SCHEMA)')
 			->OrderBy('c.ORDINAL_POSITION');
 
-		$this->Query($objQuery);
-		$arrFields = $this->FetchAll('priism\Classes\Database\Field');
+		$this->Query($query);
+		$fields = $this->FetchAll('priism\Classes\Database\Field');
 
 		/*foreach($arrDBColumns as $arrColumnDefinition)
 		{
@@ -164,12 +164,12 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 			}
 		} */
 		//TODO: Determine the relationship
-		return $arrFields;
+		return $fields;
 	}
 	
-	protected function GetExternalReferences($strDatabase, $strTable, $strColumn)
+	protected function GetExternalReferences($database, $table, $column)
 	{
-		$strQuery = '
+		$queryString = '
 			SELECT
 				REFERENCED_COLUMN_NAME AS strColumnName,
 				REFERENCED_TABLE_NAME AS strTableName,
@@ -177,70 +177,70 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 			FROM
 				information_schema.KEY_COLUMN_USAGE
 			WHERE
-				TABLE_SCHEMA = '.$this->Escape($strDatabase).'
+				TABLE_SCHEMA = '.$this->Escape($database).'
 			AND
-				TABLE_NAME = '.$this->Escape($strTable).'
+				TABLE_NAME = '.$this->Escape($table).'
 			AND
-				COLUMN_NAME = '.$this->Escape($strColumn);
+				COLUMN_NAME = '.$this->Escape($column);
 
-		$this->Query($strQuery);
+		$this->Query(queryString);
 		return $this->FetchAll();
 	}
 	
-	protected function FormatJoin(Join $objJoin)
+	protected function FormatJoin(Join $join)
 	{
-		switch($objJoin->GetType())
+		switch($join->GetType())
 		{
 			case Join::INNER:
-				$strJoinType = 'INNER';
+				$joinType = 'INNER';
 			break;
 			case Join::LEFT:
-				$strJoinType = 'LEFT';
+				$joinType = 'LEFT';
 			break;
 			default:
-				throw new Exception('Join type not handled');
+				throw new atabaseDException('Join type not handled');
 			break;
 		}
-		return sprintf(' %s JOIN %s AS %s %s', $strJoinType, $objJoin->GetTarget(), $objJoin->GetAlias(), $this->FormatClauseCollection($objJoin->GetClauseCollection())).PHP_EOL;
+		return sprintf(' %s JOIN %s AS %s %s', $joinType, $join->GetTarget(), $join->GetAlias(), $this->FormatClauseCollection($join->GetClauseCollection())).PHP_EOL;
 	}
 	
-	protected function FormatClause(Clause $objClause, $strClause = '')
+	protected function FormatClause(Clause $clause, $clauseString = '')
 	{
-		list($mxdLeft, $mxdRight) = $objClause->getArgs();
+		list($left, $right) = $clause->getArgs();
 		
-		$strClause .= $this->FormatOperator($objClause->getType());
-		$strClause .= $mxdLeft;
-		$strClause .= $this->FormatOperator($objClause->getOperator());
-		$strClause .= $objClause->Escape()?'?':$mxdRight;
+		$clauseString .= $this->FormatOperator($clause->getType());
+		$clauseString .= $left;
+		$clauseString .= $this->FormatOperator($clause->getOperator());
+		$clauseString .= $clause->Escape()?'?':$right;
 	
-		return $strClause."\r\n";
+		return $clauseString."\r\n";
 	}
 	
-	protected function FormatClauseCollection(ClauseCollection $objClauseCollection)
+	protected function FormatClauseCollection(ClauseCollection $clauseCollection)
 	{
-		switch($objClauseCollection->Count())
+		switch($clauseCollection->Count())
 		{
 			case 0: 
 				return '';
 				break;
 			case 1:
-				return $this->FormatClause($objClauseCollection->ToArray()[0]);
+				return $this->FormatClause($clauseCollection->ToArray()[0]);
 				break;
 			default:
-				$strReturn = ($objClauseCollection->GetType()==Clause::ON)?'':$this->FormatOperator($objClauseCollection->GetType()).'(';
-				foreach($objClauseCollection->ToArray() as $objClause)
+				$strReturn = ($clauseCollection->GetType()==Clause::ON)?'':$this->FormatOperator($clauseCollection->GetType()).'(';
+				foreach($clauseCollection->ToArray() as $clause)
 				{
-					$strReturn = $this->FormatClause($objClause, $strReturn);
+					$return = $this->FormatClause($clause, $return);
 				}
-				$strReturn .= ($objClauseCollection->GetType()==Clause::ON)?'':')';
-				return $strReturn;
+				$return .= ($clauseCollection->GetType()==Clause::ON)?'':')';
+				return $return;
 				break;
 		}
 	}
 	
-	protected function FormatOperator($intOperator)
+	protected function FormatOperator($operator)
 	{
-		switch($intOperator)
+		switch($operator)
 		{
 			case Clause::WHERE:
 				return '';
@@ -267,69 +267,69 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 				return ' ON ';
 				break;
 			default:
-				throw new Exception('Operator not handled');
+				throw new DatabaseException('Operator not handled');
 				break;
 		}
 	}
 	
-	protected function FormatGroupBy($arrGroupBy)
+	protected function FormatGroupBy($groupBy)
 	{
-		if(count($arrGroupBy) > 0)
+		if(count($groupBy) > 0)
 		{
-			return ' GROUP BY '.implode("\r\n",$arrGroupBy);
+			return ' GROUP BY '.implode("\r\n",$groupBy);
 		}
 	}
 	
-	protected function FormatOrderBy($arrOrderBy)
+	protected function FormatOrderBy($orderBy)
 	{
-		if(count($arrOrderBy) == 0)
+		if(count($orderBy) == 0)
 		{
 			return;
 		}
-		$strOrderBy = PHP_EOL.' ORDER BY ';
-		foreach($arrOrderBy as $strField => $intDirection)
+		$orderString = PHP_EOL.' ORDER BY ';
+		foreach($orderBy as $field => $direction)
 		{
-			$strOrderBy .= $strField;
-			switch($intDirection)
+			$orderString .= $field;
+			switch($direction)
 			{
 			 	case Query::ASC:
-			 		$strOrderBy .= ' ASC';
+			 		$orderString .= ' ASC';
 			 		break;
 			 	case Query::DESC:
-			 		$strOrderBy .= ' DESC';
+			 		$orderString .= ' DESC';
 			 		break;
 			 	default:
 			 		throw new Exception('Order by direction not handled');
 			 		break;
 			}
 		}
-		return $strOrderBy;
+		return $orderString;
 	}
 	
-	protected function FormatLimit($intNumber, $intOffset)
+	protected function FormatLimit($number, $offset)
 	{
-		if(is_null($intNumber) && is_null($intOffset))
+		if(is_null($number) && is_null($offset))
 		{
 			return;
 		}
-		elseif($intNumber > 0 && is_null($intOffset))		
+		elseif($number > 0 && is_null($offset))		
 		{
-			return sprintf(' LIMIT %u', $intNumber);
+			return sprintf(' LIMIT %u', $number);
 		}
 		else
 		{
-			return sprintf(' LIMIT %u,%u ', $intNumber, $intOffset);
+			return sprintf(' LIMIT %u,%u ', $number, $offset);
 		}
 	}
 	
-	protected function FormatFields($objFields)
+	protected function FormatFields($fields)
 	{
-		$strReturn = '';
+		$return = '';
 
-		foreach($objFields->ToArray() as $sKey => $mxdValue)
+		foreach($fields->ToArray() as $key => $value)
 		{
-			$strReturn .= ' '.$sKey.' = ?';
+			$return .= ' '.$key.' = ?';
 		}
-		return $strReturn;
+		return $return;
 	}
 }

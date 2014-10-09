@@ -1,65 +1,65 @@
 <?php
 
-namespace TomChaton\ClingDB\Entity;
+namespace tomcroft\tantrum\Entity;
 
-use TomChaton\ClingDB\Exception;
+use tomcroft\tantrum\Exception;
 
 class Entity 
 {
 
-	protected $objDB;
-	protected $arrColumns = array();
-	protected $arrObjects = array();
-	protected $strHandle;
-	protected $objPrimary;
+	protected $dB;
+	protected $columns = array();
+	protected $objects = array();
+	protected $handle;
+	protected $primary;
 	
-	private $bolAutoSet;
+	private $autoSet;
 	
-	public function __construct($strHandle, $bolAutoSet=false)
+	public function __construct($handle, $autoSet=false)
 	{
-		$this->bolAutoSet = $bolAutoSet;
-		$this->strHandle = $strHandle;
-		list($strSchema, $strTable) = explode('.', $strHandle);
-		$this->objDB = $GLOBALS['objConfig']->DB($strSchema);	
+		$this->autoSet = $autoSet;
+		$this->handle = $handle;
+		list($schema, $table) = explode('.', $handle);
+		$this->dB = $GLOBALS['objConfig']->DB($schema);	
 		$this->GetColumnDefinitions();
 	}
 	
-	public function __set($strKey, $mxdValue)
+	public function __set($key, $value)
 	{
-		$strKey = $this->objDB->MapColumnName($strKey);
-		if(!array_key_exists($strKey, $this->arrColumns))
+		$key = $this->dB->MapColumnName($key);
+		if(!array_key_exists($key, $this->columns))
 		{
-			throw new Exception($strKey.' does not exist on this entity: '.print_r($mxdValue, 1), E_USER_NOTICE);
+			throw new EntityException($strKey.' does not exist on this entity: '.print_r($mxdValue, 1), E_USER_NOTICE);
 		}
-		elseif($this->arrColumns[$strKey]->IsPrimary() && !$this->bolAutoSet)
+		elseif($this->columns[$key]->IsPrimary() && !$this->autoSet)
 		{
-			throw new Exception('Setting a primary key: '.$strKey, E_USER_NOTICE);
+			throw new EntityException('Setting a primary key: '.$key, E_USER_NOTICE);
 		}
 		else
 		{
-			$this->arrColumns[$strKey]->SetValue($mxdValue);
+			$this->arrColumns[$key]->SetValue($value);
 		}
 	}
 	
-	public function __get($strKey)
+	public function __get($key)
 	{
-		$strKey = $this->objDB->MapColumnName($strKey);
-		if(!array_key_exists($strKey, $this->arrColumns))
+		$key = $this->dB->MapColumnName($key);
+		if(!array_key_exists($key, $this->columns))
 		{
-			throw new Exception('Variable '.$strKey.' does not exist on this entity.', E_USER_NOTICE);
+			throw new EntityException('Variable '.$key.' does not exist on this entity.', E_USER_NOTICE);
 		}
-		return $this->arrColumns[$strKey]->GetValue();
+		return $this->arrColumns[$key]->GetValue();
 	}
 	
-	public function __call($strKey, $arrFilter = array())
+	public function __call($key, $filter = array())
 	{
-		if(is_callable($this->arrObjects[$strKey]))
+		if(is_callable($this->objects[$key]))
 		{
-			return call_user_func_array($this->arrObjects[$strKey], array($this->arrColumns[$strKey]->GetColumnName(), $this->arrColumns[$strKey]->GetValue()));
+			return call_user_func_array($this->objects[$key], array($this->columns[$key]->GetColumnName(), $this->columns[$key]->GetValue()));
 		}
 		else
 		{
-			throw new Exception('Function '.$strKey.' does not exist on this entity.', E_USER_NOTICE);
+			throw new EntityException('Function '.$key.' does not exist on this entity.', E_USER_NOTICE);
 		}
 	}
 
@@ -67,7 +67,7 @@ class Entity
 	{
 		if($this->IsModified())
 		{
-			if(!is_numeric($this->objPrimary->GetValue()))
+			if(!is_numeric($this->primary->GetValue()))
 			{
 				return $this->Create();
 			}
@@ -84,9 +84,9 @@ class Entity
 	
 	protected function Create()
 	{
-		$objQuery = Query::Insert($this->strHandle, null,
+		$query = Query::Insert($this->handle, null,
 			$this->GetFieldObject());
-		$this->objDB->Query($objQuery);
+		$this->dB->Query($query);
 		$this->objPrimary->SetValue($this->objDB->GetInsertId());
 		$this->ResetModified();
 		
@@ -96,34 +96,34 @@ class Entity
 	
 	protected function Update()
 	{
-		$objQuery = Query::Update($this->strHandle, null,
+		$query = Query::Update($this->handle, null,
 			$this->GetFieldObject())
-			->Where($this->objPrimary->getColumnName(), $this->objPrimary->GetValue());
-		$this->objDB->Query($objQuery);
+			->Where($this->primary->getColumnName(), $this->primary->GetValue());
+		$this->objDB->Query($query);
 		$this->ResetModified();
 		$this->Cache();
 		return true;
 	}
 	
-	public function LoadByKey($strKey, $strValue)
+	public function LoadByKey($key, $value)
 	{
 		//Could GetFromCache use a subclassed pdo object????one!one!
-		$this->bolAutoSet = true;
-		$objQuery = Query::Select($this->strHandle, NULL, $this->GetFieldObject())
-			->Where($strKey, $strValue);
-		$this->objDB->Query($objQuery);
-		foreach($this->objDB->Fetch() as $strKey => $mxdValue)
+		$this->autoSet = true;
+		$query = Query::Select($this->handle, NULL, $this->GetFieldObject())
+			->Where($key, $value);
+		$this->dB->Query($query);
+		foreach($this->dB->Fetch() as $key => $value)
 		{
-			$this->$strKey = $mxdValue;
+			$this->$key = $value;
 		}
 		
 	}
 	
 	public function IsModified()
 	{
-		foreach($this->arrColumns as $strColumnName => $objColumn)
+		foreach($this->columns as $columnName => $column)
 		{
-			if($objColumn->IsModified() === true)
+			if($column->IsModified() === true)
 			{
 				return true;
 			}
@@ -133,59 +133,59 @@ class Entity
 	
 	protected function GetColumnDefinitions()
 	{
-		$strKey = __CLASS__.'::ColumnDefinitions.'.$this->strHandle;
-		$arrColumns = $GLOBALS['objConfig']->Cache->Get($strKey);
-		list($strSchema, $strTable) = explode('.', $this->strHandle);
-		if(!$arrColumns)
+		$key = __CLASS__.'::ColumnDefinitions.'.$this->handle;
+		$columns = $GLOBALS['objConfig']->Cache->Get($key);
+		list($schema, $table) = explode('.', $this->handle);
+		if(!$columns)
 		{
-			$arrColumns = $this->objDB->GetColumnDefinitions($strTable);
-			$GLOBALS['objConfig']->Cache->Set($strKey, $arrColumns);
+			$columns = $this->dB->GetColumnDefinitions($table);
+			$GLOBALS['objConfig']->Cache->Set($key, $columns);
 		}
 		
-		foreach($arrColumns as $objColumn)
+		foreach($columns as $column)
 		{
-			$this->arrColumns[$this->objDB->MapColumnName($objColumn->GetColumnName())] = $objColumn;
-			if(!is_null($objColumn->GetJoinSchema()))
+			$this->columns[$this->dB->MapColumnName($column->GetColumnName())] = $column;
+			if(!is_null($column->GetJoinSchema()))
 			{
-				$this->arrObjects[$this->objDB->MapColumnName($objColumn->GetColumnName())] = function($strKey, $mxdValue)
+				$this->objects[$this->dB->MapColumnName($column->GetColumnName())] = function($key, $value)
 				{
-					$objEntity = new Entity($this->arrColumns[$strKey]->GetJoinSchema());
-					$objEntity->LoadByKey($this->arrColumns[$strKey]->GetJoinOn(), $mxdValue);
-					return $objEntity;
+					$entity = new Entity($this->columns[$key]->GetJoinSchema());
+					$entity->LoadByKey($this->columns[$key]->GetJoinOn(), $value);
+					return $entity;
 				};
 			}
-			if($objColumn->IsPrimary())
+			if($column->IsPrimary())
 			{
-				$this->objPrimary = $objColumn;
+				$this->primary = $column;
 			}
 		}
 	}
 	
 	protected function GetFieldObject()
 	{
-		$objFieldCollection = new Fields();
-		foreach($this->arrColumns as $strKey => $objField)
+		$fieldCollection = new Fields();
+		foreach($this->columns as $key => $field)
 		{
-			$strColumnName = $objField->GetColumnName();
-			$objFieldCollection->$strColumnName = $objField->GetValue();
+			$columnName = $field->GetColumnName();
+			$fieldCollection->$columnName = $field->GetValue();
 		}
-		return $objFieldCollection;
+		return $fieldCollection;
 	}
 	
 	protected function ResetModified()
 	{
-		foreach($this->arrColumns as $objField)
+		foreach($this->columns as $field)
 		{
-			$objField->SetModified(false);
+			$field->SetModified(false);
 		}
 	}
 	
 	protected function Cache()
 	{
-		$arrCache = array();
-		foreach($this->arrColumns as $strKey => $objField)
+		$cache = array();
+		foreach($this->columns as $key => $field)
 		{
-			$arrCache[$strKey] = $objField->GetValue();
+			$cache[$key] = $field->GetValue();
 		}
 	}
 }

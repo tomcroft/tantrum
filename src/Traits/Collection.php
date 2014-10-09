@@ -5,21 +5,21 @@ namespace TomChatin\clingDB\Traits;
 trait Collection
 {
 
-	protected $arrData = array();
+	protected $data = array();
 	
-	public function __set($mxdKey, $mxdValue)
+	public function __set($key, $value)
 	{
-		$this->arrData[$mxdKey] = $mxdValue;
+		$this->data[$key] = $value;
 	}
 	
-	public function __get($mxdKey)
+	public function __get($key)
 	{
-		return $this->arrData[$mxdKey];
+		return $this->data[$key];
 	}
 	
 	public function Count()
 	{
-		return count($this->arrData);
+		return count($this->data);
 	}
 	
 	public function IsEmpty()
@@ -29,6 +29,6 @@ trait Collection
 	
 	public function ToArray()
 	{
-		return $this->arrData;
+		return $this->data;
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChaton\ClingDB\QueryBuilder;
+namespace tomcroft\tantrum\QueryBuilder;
 
 class Join
 {
@@ -9,52 +9,52 @@ class Join
 	const LEFT = 2;
 	const STRAIGHT = 3;
 	
-	protected $intType;
-	protected $strAlias;
-	protected $strFrom;
+	protected $type;
+	protected $alias;
+	protected $from;
 	
-	public function __construct($strFrom, $intType = self::STRAIGHT, $objClauseCollection = null)
+	public function __construct($from, $type = self::STRAIGHT, $clauseCollection = null)
 	{
 		//@TODO: Subclass this
-		$this->intType = $intType;
-		$this->strFrom = $strFrom;
-		$this->objClauseCollection = $objClauseCollection;
+		$this->type = $type;
+		$this->from = $from;
+		$this->clauseCollection = $clauseCollection;
 	}
 	
-	public function SetAlias($strAlias)
+	public function SetAlias($alias)
 	{
-		$this->strAlias = $strAlias;
+		$this->alias = $alias;
 	}
 	
 	public function GetAlias()
 	{
-		return $this->strAlias;
+		return $this->slias;
 	}
 	
 	public function GetType()
 	{
-		return $this->intType;
+		return $this->type;
 	}
 	
 	public function GetTarget()
 	{
-		return $this->strFrom;
+		return $this->from;
 	}
 	
 	public function GetClauseCollection()
 	{
-		return $this->objClauseCollection;
+		return $this->clauseCollection;
 	}
 	
-	public static function Inner($strFrom, ClauseCollection $objClauseCollection)
+	public static function Inner($from, ClauseCollection $clauseCollection)
 	{
-		$objJoin = new Join($strFrom, self::INNER, $objClauseCollection);
-		return $objJoin;
+		$join = new Join($from, self::INNER, $clauseCollection);
+		return $join;
 	}
 	
-	public static function Left($strFrom, ClauseCollection $objClauseCollection)
+	public static function Left($from, ClauseCollection $clauseCollection)
 	{
-		$objJoin = new Join($strFrom, self::LEFT, $objClauseCollection);
-		return $objJoin;
+		$join = new Join($from, self::LEFT, $clauseCollection);
+		return $join;
 	}
 }

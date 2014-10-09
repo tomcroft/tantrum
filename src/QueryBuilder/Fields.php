@@ -1,27 +1,27 @@
 <?php
 
-namespace TomChaton\ClingDB\QueryBuilder;
+namespace tomcroft\tantrum\QueryBuilder;
 
 class Fields
 {
 
-	use TomChaton\ClingDB\Traits\Collection;
+	use tomcroft\tantrum\Traits\Collection;
 
-	protected $arrFields = array();
+	protected $data = array();
 
 	public function __construct()
 	{
-		$arrData = func_get_args();
+		$data = func_get_args();
 		
-		foreach($arrData as $mxdField)
+		foreach($data as $field)
 		{
-			if(is_array($mxdField))
+			if(is_array($field))
 			{
-				$this->arrData[array_keys($mxdField)[0]] = array_values($mxdField)[0];
+				$this->data[array_keys($field)[0]] = array_values($field)[0];
 			}
 			else
 			{
-				$this->arrData[$mxdField] = $mxdField;
+				$this->data[$field] = $field;
 			}
 		}
 	}

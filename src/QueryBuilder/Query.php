@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChaton\ClingDB\QueryBuilder;
+namespace tomcroft\tantrum\QueryBuilder;
 	
 class Query 
 {
@@ -12,221 +12,354 @@ class Query
 	const ASC = 100;
 	const DESC = 101;
 	
-	protected $intType;
-	protected $strFrom;
-	protected $strAlias;
-	protected $objFields;
-	protected $arrClauses = array();
-	protected $arrJoins = array();
-	protected $intOffset;
-	protected $intStart;
-	protected $arrGroupBy = array();
-	protected $arrOrderBy = array();
-	protected $objDuplicateFieldsForUpdate;
+	protected $type;
+	protected $name;
+	protected $alias;
+	protected $fields;
+	protected $clauses = array();
+	protected $joins = array();
+	protected $offset;
+	protected $start;
+	protected $groupBy = array();
+	protected $orderBy = array();
+	protected $duplicateFieldsForUpdate;
 	
-	public function __construct($intType, $strFrom, $strAlias=null, $objFields=null)
+	/**
+	 * @param integer $type  - one of self::SELECT, self::INSERT, self::UPDATE or self::DELETE 
+	 * @param string $name   - the table we're acting upon
+	 * @param string $alias  - the alias we'll give the table in the query
+	 * @param Fields $fields - an object containing the key/value pairs
+	 */
+	public function __construct($type, $name, $alias=null, $fields=null)
 	{
-		$this->intType = $intType;
-		$this->objFields = $objFields?:new Fields();
-		$this->strFrom = $strFrom;
-		$this->strAlias = $strAlias;
+		$this->type   = $type;
+		$this->fields = $fields?:new Fields();
+		$this->table  = $name;
+		$this->alias  = $alias;
 	}
 	
-	public static function Select($strFrom, $strAlias=null, Fields $objFields=null)
+	/**
+	 * Create and return a SELECT query object
+	 * @param string $name   - the table we're acting upon
+	 * @param string $alias  - the alias we'll give the table in the query
+	 * @param Fields $fields - an object containing the key/value pairs
+	 */
+	public static function Select($name, $alias=null, Fields $fields=null)
 	{
-		$objQuery = new Query(self::SELECT, $strFrom, $strAlias, $objFields);
-		return $objQuery;
+		$query = new Query(self::SELECT, $name, $alias, $fields);
+		return $query;
 	}
 	
-	public static function Insert($strFrom, $strAlias=null, Fields $objFields)
+	/**
+	 * Create and return an INSERT query object
+	 * @param string $name   - the table we're acting upon
+	 * @param string $alias  - the alias we'll give the table in the query
+	 * @param Fields $fields - an object containing the key/value pairs
+	 */
+	public static function Insert($name, $alias=null, Fields $fields)
 	{
-		$objQuery = new Query(self::INSERT, $strFrom, $strAlias, $objFields);
-		return $objQuery;
+		$query = new Query(self::INSERT, $name, $alias, $fields);
+		return $query;
 	}
 	
-	public static function Delete($strFrom, $strAlias=null)
+	/**
+	 * Create and return a DELETE query object
+	 * @param string $name   - the table we're acting upon
+	 * @param string $alias  - the alias we'll give the table in the query
+	 * @param Fields $fields - an object containing the key/value pairs
+	 */
+	public static function Delete($name, $alias=null)
 	{
-		$objQuery = new Query(self::DELETE, $strFrom, $strAlias);
-		return $objQuery;
+		$query = new Query(self::DELETE, $name, $alias);
+		return $query;
 	}
 	
-	public static function Update($strFrom, $strAlias=null, Fields $objFields)
+	/**
+	 * Create and return an UPDATE query object
+	 * @param string $name   - the table we're acting upon
+	 * @param string $alias  - the alias we'll give the table in the query
+	 * @param Fields $fields - an object containing the key/value pairs
+	 */
+	public static function Update($name, $alias=null, Fields $fields)
 	{
-		$objQuery = new Query(self::UPDATE, $strFrom, $strAlias, $objFields);
-		return $objQuery;
+		$query = new Query(self::UPDATE, $name, $alias, $fields);
+		return $query;
 	}
 	
-	public function __call($strCommand, $arrArguments)
+	/**
+	 * Used to automatically build 
+	 * @param  string $command
+	 * @param  array $arguments
+	 * @return mixed
+	 */
+	public function __call($command, $arguments)
 	{
-		switch($strCommand)
+		switch($command)
 		{
 			case 'And':
-				$objReflectionMethod = new \ReflectionMethod(__CLASS__, '_And');
+				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_And');
 			break;
 			case 'Where':
-				$objReflectionMethod = new \ReflectionMethod(__CLASS__, '_Where');
+				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_Where');
 			break;
 			case 'Or':
-				$objReflectionMethod = new \ReflectionMethod(__CLASS__, '_Or');
+				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_Or');
 			break;
 			default:
-				throw new Exception('Method not handled.');
+				throw new QueryException(sprintf('Method "%s" not handled.', $command));
 			break;
 		}
 		
-		return $objReflectionMethod->invokeArgs($this, $arrArguments);
+		return $reflectionMethod->invokeArgs($this, $arguments);
 	}
 	
-	public function _Where($mxdLeft, $mxdRight=null, $intOperator = Clause::EQUALS, $bolEscape=true)
+	/**
+	 * Add a "WHERE" clause
+	 * @param  mixed   $left      - a Clause or ClauseCollection
+	 * @param  mixed   $right     - a Clause or ClauseCollection
+	 * @param  integer $operator  - Clause class constant '=', '!=', '<' or '>'
+	 * @param  boolean $escape    - whether the clause arguments should be escaped
+	 * @return Query
+	 */
+	public function _Where($left, $right=null, $operator = Clause::EQUALS, $escape=true)
 	{
-		$this->arrClauses[] = ($mxdLeft instanceof ClauseCollection)
-														? $mxdLeft
-														: Clause::Where($mxdLeft, $mxdRight, $intOperator, $bolEscape);
+		$this->clauses[] = ($left instanceof ClauseCollection)
+									? $left
+									: Clause::Where($left, $right, $operator, $escape);
 		return $this;
 	}
 	
-	public function _And($mxdLeft, $mxdRight=null, $intOperator = Clause::EQUALS, $bolEscape=true)
+	/**
+	 * Add an "AND" clause
+	 * @param  mixed   $left      - a Clause or ClauseCollection
+	 * @param  mixed   $right     - a Clause or ClauseCollection
+	 * @param  integer $operator  - Clause class constant '=', '!=', '<' or '>'
+	 * @param  boolean $escape    - whether the clause arguments should be escaped
+	 * @return Query
+	 */
+	public function _And($left, $right=null, $operator = Clause::EQUALS, $escape=true)
 	{
-		$this->arrClauses[] = ($mxdLeft instanceof ClauseCollection)
-														? $mxdLeft
-														: CLAUSE::_And($mxdLeft, $mxdRight, $intOperator, $bolEscape);
+		$this->clauses[] = ($left instanceof ClauseCollection)
+									? $left
+									: CLAUSE::_And($left, $right, $operator, $escape);
 		return $this;
 	}
 	
-	public function _Or($mxdLeft, $mxdRight=null, $intOperator = Clause::EQUALS, $bolEscape=true)
+	/**
+	 * Add an "OR" clause
+	 * @param  mixed   $left      - a Clause or ClauseCollection
+	 * @param  mixed   $right     - a Clause or ClauseCollection
+	 * @param  integer $operator  - Clause class constant '=', '!=', '<' or '>'
+	 * @param  boolean $escape    - whether the clause arguments should be escaped
+	 * @return Query
+	 */
+	public function _Or($left, $right=null, $operator = Clause::EQUALS, $escape=true)
 	{
-		if($mxdLeft instanceof ClauseCollection)
-		{
-			$mxdLeft->SetType(Clause::_OR);
-			$this->arrClauses[] = $mxdLeft;
+		if ($left instanceof ClauseCollection) {
+			$left->SetType(Clause::_OR);
+			$this->clauses[] = $left;
+		} else {
+			CLAUSE::_Or($left, $right, $operator, $escape);
 		}
-		else
-		{
-			CLAUSE::_Or($mxdLeft, $mxdRight, $intOperator, $bolEscape);
-		}
 		return $this;
 	}
 	
-	public function Limit($intOffset, $intStart = 0)
+	/**
+	 * Start and limit for SELECT queries
+	 * @param  integer  $offset
+	 * @param  integer  $start
+	 * @return void
+	 */
+	public function Limit($offset, $start = 0)
 	{
-		$this->intOffset = $intOffset;
-		$this->intStart = $intStart;
+		$this->offset = $offset;
+		$this->start = $start;
 	}
 	
-	public function InnerJoin($strFrom, ClauseCollection $objClauseCollection, $strAlias=null)
+	/**
+	 * Add an INNER join
+	 * @param string           $name             - The schema and table to join to (dot.notation)
+	 * @param ClauseCollection $clauseCollection
+	 * @param string           $alias            - An alias for the joined table
+	 * @return Query
+	 */
+	public function InnerJoin($name, ClauseCollection $objClauseCollection, $alias=null)
 	{
-		list($strTable, $strSchema) = explode('.', $strFrom);
+		list($table, $schema) = explode('.', $name);
 		//@TODO: md5 could create an ambiguous or illegal alias name here
-		$strAlias = $strAlias?:md5(count($this->arrJoins).$strFrom);
-		$objJoin = Join::Inner($strFrom, $objClauseCollection);
-		$objJoin->SetAlias($strAlias);
-		$this->arrJoins[$strAlias] = $objJoin;
+		$alias = $alias?:uniqid(count($this->joins).$name);
+		$join = Join::Inner($name, $clauseCollection);
+		$join->SetAlias($alias);
+		$this->joins[$alias] = $join;
 		return $this;
 	}
 	
-	public function LeftJoin($strFrom, ClauseCollection $objClause, $strAlias=null)
+	/**
+	 * Add a LEFT join
+	 * @param  string           $name             - The schema and table to join to (dot.notation)
+	 * @param  ClauseCollection $clauseCollection
+	 * @param  string           $alias            - An alias for the joined table
+	 * @return Query
+	 */
+	public function LeftJoin($name, ClauseCollection $clauseClollection, $alias=null)
 	{
-		list($strTable, $strSchema) = explode('.', $strFrom);
+		list($table, $schema) = explode('.', $name);
 		//@TODO: md5 could create an ambiguous or illegal alias name here
-		$strAlias = $strAlias?:md5(count($this->arrJoins).$strSchema.$strTable);
-		$objJoin = Join::Left($strFrom, $objClause);
-		$objJoin->SetAlias($strAlias);
-		$this->arrJoins[$strAlias] = $objJoin;
+		$alias = $alias?:uniqid(count($this->joins).$strSchema.$strTable);
+		$join = Join::Left($name, $clauseCollection);
+		$join->SetAlias($alias);
+		$this->joins[$alias] = $join;
 		return $this;
 	}
 	
-	public function GroupBy($strGroupBy)
+	/**
+	 * Group the results by a field
+	 * @param [type] $groupBy [description]
+	 */
+	public function GroupBy($groupBy)
 	{
-		$this->arrGroupBy[] = $strGroupBy;
+		$this->groupBy[] = $groupBy;
 		return $this;
 	}
 	
-	public function OrderBy($strOrderBy, $intDirection=self::ASC)
+	/**
+	 * Order the results by a field
+	 * @param string  $orderBy   - the field by which to order
+	 * @param integer $direction - ASC or DESC
+	 */
+	public function OrderBy($orderBy, $direction=self::ASC)
 	{
-		$this->arrOrderBy[$strOrderBy] = $intDirection;
+		$this->orderBy[$orderBy] = $direction;
 		return $this;
 	}
 	
-	public function OnDuplicate(Fields $objFields)
+	/**
+	 * List fields to update on a duplicate key violation
+	 * @param  Fields $fields - an object representing key/value pairs
+	 * @return Query
+	 */
+	public function OnDuplicate(Fields $fields)
 	{
-		$this->objDuplicateFieldsForUpdate = $objFields;
+		$this->duplicateFieldsForUpdate = $fields;
 		return $this;
 	}
 	
+	/**
+	 * get the fields this query is inserting / updating
+	 * @return Fields
+	 */
 	public function GetFields()
 	{
-		return $this->objFields;
+		return $this->fields;
 	}
 	
+	/**
+	 * get the fields this query will update on a duplicate key violation
+	 */
 	public function GetDuplicateFieldsForUpdate()
 	{
-		return $this->objDuplicateFieldsForUpdate;
+		return $this->duplicateFieldsForUpdate;
 	}
 	
+	/**
+	 * get the table name and schema (dot.notation)
+	 */
 	public function GetFrom()
 	{
-		return $this->strFrom;
+		return $this->from;
 	}
 	
+	/**
+	 * returns an array of joins for this query
+	 * @return array
+	 */
 	public function GetJoins()
 	{
-		return $this->arrJoins;
+		return $this->joins;
 	}
 	
+	/**
+	 * get the clauses for this query
+	 */
 	public function GetClauses()
 	{
-		return $this->arrClauses;
+		return $this->clauses;
 	}
 	
+	/**
+	 * get the offset value
+	 * @return integer
+	 */
 	public function GetOffset()
 	{
-		return $this->intOffset;
+		return $this->offset;
 	}
 	
+	/**
+	 * get the start value
+	 * @return integer
+	 */
 	public function GetStart()
 	{
-		return $this->intStart;
+		return $this->start;
 	}
 	
+	/**
+	 * get the alias for the table we're acting upon
+	 * @return string
+	 */
 	public function GetAlias()
 	{
 		//not sure if this should go here..
-		return $this->strAlias;
+		return $this->alias;
 	}
 	
+	/**
+	 * get the type of query
+	 * @return integer
+	 */
 	public function GetType()
 	{
-		return $this->intType;
+		return $this->type;
 	}
 	
+	/**
+	 * get the columns we're grouping by
+	 * @return array
+	 */
 	public function GetGroupBy()
 	{
-		return $this->arrGroupBy;
+		return $this->groupBy;
 	}
 	
+	/**
+	 * get the columns we're ordering by
+	 * @return array
+	 */
 	public function GetOrderBy()
 	{
-		return $this->arrOrderBy;
+		return $this->orderBy;
 	}
 	
-	public function GetParameters($arrClauses = NULL, $arrParameters = array())
+	/**
+	 * get the values from the key/value pairs inside the clauses (for PDO prepared statement)
+	 * @param  array $clauses
+	 * @param  array $parameters [description]
+	 * @return array
+	 */
+	public function GetParameters($clauses = null, $parameters = array())
 	{
-		$arrClauses = is_null($arrClauses)?$this->arrClauses:$arrClauses;
-		foreach($arrClauses as $mxdClause)
-		{
-			if($mxdClause instanceof ClauseCollection)
-			{
-				$arrParameters = array_merge($this->GetParameters($mxdClause->ToArray()), $arrParameters);
-			}
-			else
-			{	
-				list($mxdLeft, $mxdRight) = $mxdClause->GetArgs();
-				if($mxdClause->Escape() === true)
-				{
-						$arrParameters[] = $mxdRight;
+		$clauses = is_null($clauses)?$this->clauses:$clauses;
+		foreach ($clauses as $clause)	{
+			if ($clause instanceof ClauseCollection) {
+				$parameters = array_merge($this->GetParameters($clause->ToArray()), $parameters);
+			} else {	
+				list($left, $right) = $clause->GetArgs();
+				if ($clause->Escape() === true) {
+					$parameters[] = $right;
 				}
 			}
 		}
-		return $arrParameters;
+		return $parameters;
 	}
 }
