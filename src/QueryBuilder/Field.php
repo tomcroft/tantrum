@@ -5,60 +5,53 @@ namespace tomcroft\tantrum\QueryBuilder;
 class Field
 {
 	protected $columnName = NULL;
-	protected $required = NULL;
-	protected $maximumLength = NULL;
 	protected $columnKey = NULL;
 	protected $joinDatabase = NULL;
 	protected $joinTable = NULL;
 	protected $joinOn = NULL;
-	protected $extensionColumn = NULL; //whatever this means!
 	protected $modified = FALSE;
-	protected $hasExternalReferences = NULL; //whatever this means!
-	protected $ordinalPosition = NULL;
-	protected $positionInUniqueConstraint = NULL;
-	protected $mvalue = NULL;
+	protected $value = NULL;
 	
-	public function SetValue($value)
+	public function setValue($value)
 	{
 		$this->value = $value;
 		$this->modified = true;
 	}
 	
-	public function IsPrimary()
+	public function isPrimary()
 	{
 		return $this->columnKey === 'PRI';
 	}
 	
-	public function IsModified()
+	public function isModified()
 	{
 		return $this->modified;
 	}
 	
-	public function GetJoinSchema()
+	public function getJoinSchema()
 	{
-		if(!is_null($this->joinDatabase) && !is_null($this->joinTable))
-		{
+		if(!is_null($this->joinDatabase) && !is_null($this->joinTable)) {
 			return sprintf('%s.%s', $this->joinDatabase, $this->joinTable);
 		}
 		return null;
 	}
 	
-	public function GetJoinOn()
+	public function getJoinOn()
 	{
 		return $this->joinOn;
 	}
 	
-	public function GetColumnName()
+	public function getColumnName()
 	{
 		return $this->columnName;
 	}
 	
-	public function GetValue()
+	public function getValue()
 	{
 		return $this->value;
 	}
 	
-	public function SetModified($modified)
+	public function setModified($modified)
 	{
 		$this->modified = $modified;
 	}

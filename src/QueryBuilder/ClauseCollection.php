@@ -2,25 +2,19 @@
 
 namespace tomcroft\tantrum\QueryBuilder;
 
-use tomcroft\tantrum\Exception;
+use tomcroft\tantrum\Exception,
+	tomcroft\tantrum\Core;
 
-class ClauseCollection  
+class ClauseCollection extends Core\Module
 {
 
-	use tomcroft\tantrum\Collection;
+	use \tomcroft\tantrum\Traits\Collection;
 
 	protected $type;
 	
-	public function __construct($clause, $type = Clause::WHERE)
-	{
-		$this->data[] = $clause;
-		$this->type = $yype;
-	}
-	
 	public function __call($call, $arguments)
 	{
-		switch($call)
-		{
+		switch($call) {
 			case 'And':
 				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_And');
 			break;
@@ -28,30 +22,36 @@ class ClauseCollection
 				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_Or');
 			break;
 			default:
-				throw new ClauseException('Method not handled.');
+				throw new Exception\ClauseException('Method "'.$call.'" not handled.');
 			break;
 		}
 		return $reflectionMethod->invokeArgs($this, $arguments);
 	}
 	
-	public function _And($left, $right=null, $operator = Clause::EQUALS, $escape = true)
+	public function _And($left, $right=null, $operator = Clause::EQUALS, $escaped = true)
 	{
-		$this->data[] = Clause::_And($left, $right, $operator, $escape);
+		$this->data[] = Clause::_And($left, $right, $operator, $escaped);
 		return $this;
 	}
 	
-	public function _Or($left, $right=null, $operator = Clause::EQUALS, $escape = true)
+	public function _Or($left, $right=null, $operator = Clause::EQUALS, $escaped = true)
 	{
-		$this->data[] = Clause::_Or($left, $right, $operator, $escape);
+		$this->data[] = Clause::_Or($left, $right, $operator, $escaped);
 		return $this;
 	}
-	
-	public function SetType($type)
+
+	public function addClause(Clause $clause)
 	{
+		$this->data[] = $clause;
+	}
+	
+	public function setType($type)
+	{
+		Clause::validateType($type);
 		$this->type = $type;
 	}
 	
-	public function GetType()
+	public function getType()
 	{
 		return $this->type;
 	}

@@ -1,6 +1,6 @@
 <?php
 
-namespace TomChatin\clingDB\Traits;
+namespace tomcroft\tantrum\Traits;
 
 trait Collection
 {
@@ -27,7 +27,7 @@ trait Collection
 		return $this->Count() === 0;
 	}
 	
-	public function ToArray()
+	public function toArray()
 	{
 		return $this->data;
 	}

@@ -18,24 +18,18 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 		$queryString = 'SELECT '.PHP_EOL.$fields.PHP_EOL.' FROM '.PHP_EOL.$query->GetFrom();
 		$queryString .= $query->GetAlias()?' AS '.$query->GetAlias().PHP_EOL:''.PHP_EOL;
 
-		foreach($query->GetJoins() as $join)
-		{
+		foreach($query->GetJoins() as $join) {
 			$queryString .= $this->FormatJoin($join);
 		}
 		$clauses = $query->GetClauses();
 
-		if(count($clauses) > 0)
-		{
+		if(count($clauses) > 0) {
 			$queryString .= ' WHERE ';
 			
-			foreach($clauses as $clause)
-			{
-				if($clause instanceof Clause)
-				{
+			foreach($clauses as $clause) {
+				if($clause instanceof Clause) {
 					$queryString .= $this->FormatClause($clause);
-				}
-				elseif($clause instanceof ClauseCollection)
-				{
+				} elseif($clause instanceof ClauseCollection) {
 					$queryString .= $this->FormatClauseCollection($clause);
 				}
 			}
@@ -54,15 +48,13 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
   		' ('.implode(',',array_keys($query->GetFields()->ToArray())).')'.
   		' VALUES '.
   		' ('.implode(',', $placeholders).')';
-  	if(!is_null($query->GetDuplicateFieldsForUpdate()))
-  	{
+  	if(!is_null($query->GetDuplicateFieldsForUpdate())) {
   		$queryString .= ' ON DUPLICATE KEY UPDATE ';
   		$fields = array();
-  		foreach(array_keys($query->GetDuplicateFieldsForUpdate()->ToArray()) as $key)
-  		{
+  		foreach(array_keys($query->GetDuplicateFieldsForUpdate()->ToArray()) as $key) {
   			$fields[] = $key.' = ?';
-			}
-			$queryString .= implode(',',$fields);
+		}
+		$queryString .= implode(',',$fields);
   	}
   	return $queryString;
   }
@@ -71,19 +63,14 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
   {
   	$queryString = 'DELETE FROM '.$query->GetFrom();
   	$queryString .= $query->GetAlias()?' AS '.$query->GetAlias().PHP_EOL:''.PHP_EOL;
-  	foreach($query->GetJoins() as $join)
-		{
-			$queryString .= $this->FormatJoin($join);
-		}
-		$queryString .= ' WHERE ';
-  	foreach($query->GetClauses() as $clause)
-  	{
-  		if($clause instanceof Clause)
-  		{
+  	foreach($query->GetJoins() as $join) {
+		$queryString .= $this->FormatJoin($join);
+	}
+	$queryString .= ' WHERE ';
+  	foreach($query->GetClauses() as $clause) {
+  		if($clause instanceof Clause) {
   			$queryString .= $this->FormatClause($clause);
-  		}
-  		elseif($clause instanceof ClauseCollection)
-  		{
+  		} elseif($clause instanceof ClauseCollection) {
   			$queryString .= $this->FormatClauseCollection($clause);
   		}
   	}
@@ -102,14 +89,10 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
   	$queryString .= implode(' = ?, ', array_keys($query->GetFields()->ToArray())).' = ?';
   	
   	$queryString .= ' WHERE ';
-  	foreach($query->GetClauses() as $clause)
-  	{
-  		if($clause instanceof Clause)
-  		{
+  	foreach($query->GetClauses() as $clause) {
+  		if($clause instanceof Clause) {
   			$queryString .= $this->FormatClause($clause);
-  		}
-  		elseif($clause instanceof ClauseCollection)
-  		{
+  		} elseif($clause instanceof ClauseCollection) {
   			$queryString .= $this->FormatClauseCollection($clause);
   		}
   	}
@@ -189,8 +172,7 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 	
 	protected function FormatJoin(Join $join)
 	{
-		switch($join->GetType())
-		{
+		switch ($join->GetType()) {
 			case Join::INNER:
 				$joinType = 'INNER';
 			break;
@@ -218,8 +200,7 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 	
 	protected function FormatClauseCollection(ClauseCollection $clauseCollection)
 	{
-		switch($clauseCollection->Count())
-		{
+		switch($clauseCollection->Count()) {
 			case 0: 
 				return '';
 				break;
@@ -228,8 +209,7 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 				break;
 			default:
 				$strReturn = ($clauseCollection->GetType()==Clause::ON)?'':$this->FormatOperator($clauseCollection->GetType()).'(';
-				foreach($clauseCollection->ToArray() as $clause)
-				{
+				foreach($clauseCollection->ToArray() as $clause) {
 					$return = $this->FormatClause($clause, $return);
 				}
 				$return .= ($clauseCollection->GetType()==Clause::ON)?'':')';
@@ -240,8 +220,7 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 	
 	protected function FormatOperator($operator)
 	{
-		switch($operator)
-		{
+		switch($operator) {
 			case Clause::WHERE:
 				return '';
 				break;
@@ -274,24 +253,20 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 	
 	protected function FormatGroupBy($groupBy)
 	{
-		if(count($groupBy) > 0)
-		{
+		if(count($groupBy) > 0) {
 			return ' GROUP BY '.implode("\r\n",$groupBy);
 		}
 	}
 	
 	protected function FormatOrderBy($orderBy)
 	{
-		if(count($orderBy) == 0)
-		{
+		if(count($orderBy) == 0) {
 			return;
 		}
 		$orderString = PHP_EOL.' ORDER BY ';
-		foreach($orderBy as $field => $direction)
-		{
+		foreach($orderBy as $field => $direction) {
 			$orderString .= $field;
-			switch($direction)
-			{
+			switch($direction) {
 			 	case Query::ASC:
 			 		$orderString .= ' ASC';
 			 		break;
@@ -308,16 +283,11 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 	
 	protected function FormatLimit($number, $offset)
 	{
-		if(is_null($number) && is_null($offset))
-		{
+		if(is_null($number) && is_null($offset)) {
 			return;
-		}
-		elseif($number > 0 && is_null($offset))		
-		{
+		} elseif($number > 0 && is_null($offset)) {
 			return sprintf(' LIMIT %u', $number);
-		}
-		else
-		{
+		} else {
 			return sprintf(' LIMIT %u,%u ', $number, $offset);
 		}
 	}
@@ -326,8 +296,7 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 	{
 		$return = '';
 
-		foreach($fields->ToArray() as $key => $value)
-		{
+		foreach($fields->ToArray() as $key => $value) {
 			$return .= ' '.$key.' = ?';
 		}
 		return $return;

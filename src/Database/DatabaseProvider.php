@@ -43,8 +43,7 @@ class DatabaseProvider
 	
 	public function Query(Query $query)
 	{
-		switch($query->getType())
-		{
+		switch ($query->getType()) {
 			case Query::SELECT: 
 				$query = $this->FormatSelect($query);
 				$parameters = $query->GetParameters();
@@ -67,23 +66,16 @@ class DatabaseProvider
 			default:
 				throw new DatabaseException('Query Type Not Handled');
 				break;
-		}
-		try
-		{
+		} try {
 			$this->connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false); 
-			if($this->statement = $this->connection->prepare($queryString))
-			{
+			if($this->statement = $this->connection->prepare($queryString)) {
 				$this->statement->execute($parameters);
 				return $this->CheckErrors($this->statement, $queryString);
-			}
-			else
-			{
+			} else {
 				//$this->connection->debugDumpParams();
 				throw new DatabaseException("Prepare statement failed:\r\n".print_r($this->connection->errorInfo(), 1)."\r\n".$queryString);
 			}
-		}
-		catch(PDOException $e)
-		{
+		} catch(PDOException $e) {
 			throw new DatabaseException($e->getMessage());
 		}
 	}
@@ -112,9 +104,7 @@ class DatabaseProvider
 		if(!is_null($className))
 		{
 			$this->statement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $className, $constructorArgs);
-		}
-		else
-		{
+		} else {
 			$this->statement->setFetchMode(\PDO::FETCH_ASSOC);
 		}
 		return $this->statement->fetch();
@@ -126,9 +116,7 @@ class DatabaseProvider
 		if(!is_null($className))
 		{
 			$this->statement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $className, $constructorArgs);
-		}
-		else
-		{
+		} else {
 			$this->statement->setFetchMode(\PDO::FETCH_ASSOC);
 		}
 		return $this->statement->fetchAll();
@@ -137,8 +125,7 @@ class DatabaseProvider
 	protected function CheckErrors($pdo, $queryString)
 	{
 		$errors = $pdo->errorInfo();
-		if($errors[0] > 0)
-		{
+		if($errors[0] > 0) {
 			throw new DatabaseException($errors[2].":\r\n".$queryString);
 		}
 	}

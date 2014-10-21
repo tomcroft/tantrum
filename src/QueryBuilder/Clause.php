@@ -2,7 +2,10 @@
 
 namespace tomcroft\tantrum\QueryBuilder;
 
-class Clause
+use tomcroft\tantrum\Exception,
+	tomcroft\tantrum\Core;
+
+class Clause extends Core\Module
 {
 	const WHERE = 0;
 	const _AND = 1;
@@ -18,17 +21,36 @@ class Clause
 	protected $operator;
 	protected $left;
 	protected $right;
-	protected $escape;
-	
-	// public function __construct($type, $escape=true)
-	// {
-	// 	//@TODO: Subclass this
-	// 	$this->type = $type;
-	// 	$this->escape = $escape;
-	// }
-	
-	public function SetArgs($left, $right, $operator)
+	protected $escaped = true;
+
+	public function setType($type)
 	{
+		self::validateType($type);
+		$this->type = $type;
+	}
+
+	public function setEscaped($escaped)
+	{
+		if(!is_bool($escaped)) {
+			throw new Exception\ClauseException('Escape must be a boolean value'); 
+		} 
+		$this->escaped = $escaped;
+	}
+	
+	/**
+	 * Set the arguments for the clause
+	 * @param mixed $left  - the left operand
+	 * @param mixed $right - the right operand
+	 * @param integer $operator - the operator
+	 * @throws tomcroft\tantrum\Exception\ClauseException
+	 * @return tomcroft\tantrum\QueryBuilder\Clause
+	 */
+	public function setArgs($left, $right, $operator)
+	{
+		/**
+			TODO: Validate the arguments, if possible
+		 */
+		$this->validateOperator($operator);
 		$this->left = $left;
 		$this->right = $right;
 		$this->operator = $operator;
@@ -40,47 +62,92 @@ class Clause
 		return $this->type;
 	}
 	
-	public function GetArgs()
+	public function getArgs()
 	{
 		return array($this->left, $this->right);
 	}
 	
-	public function GetOperator()
+	public function getOperator()
 	{
 		return $this->operator;
 	}
 	
-	public function Escape()
+	public function isEscaped()
 	{
-		return $this->escape;
+		return $this->escaped;
 	}
 	
-	public static function Where($left, $right, $operator=self::EQUALS, $escape=true)
+	public static function Where($left, $right, $operator=self::EQUALS, $escaped=false)
 	{
-		$clause = new Clause(self::WHERE, $escape);
-		$clause->SetArgs($left, $right, $operator);
-		$clauseCollection = new ClauseCollection($clause);
+		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause->setType(self::WHERE);
+		$clause->setEscaped($escaped);
+		$clause->setArgs($left, $right, $operator);
+		$clauseCollection = self::newInstance('tomcroft\tantrum\QueryBuilder\ClauseCollection');
+		$clauseCollection->addClause($clause);
+		$clauseCollection->setType(self::WHERE);
 		return $clauseCollection;
 	}
 	
-	public static function On($left, $right, $operator=self::EQUALS, $escape=false)
+	public static function On($left, $right, $operator=self::EQUALS, $escaped=false)
 	{
-		$clause = new Clause(self::ON, $bscape);
-		$clause->SetArgs($left, $right, $operator);
-		$clauseCollection = new ClauseCollection($clause);
+		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause->setType(self::ON);
+		$clause->setEscaped($escaped);
+		$clause->setArgs($left, $right, $operator);
+		$clauseCollection = self::newInstance('tomcroft\tantrum\QueryBuilder\ClauseCollection');
+		$clauseCollection->addClause($clause);
 		$clauseCollection->setType(self::ON);
 		return $clauseCollection;
 	}
 	
-	public static function _And($left, $right, $operator=self::EQUALS, $escape=true)
+	public static function _And($left, $right, $operator=self::EQUALS, $escaped=true)
 	{
-		$clause = new Clause(self::_AND, $escape);
-		return $clause->SetArgs($left, $right, $operator);
+		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause->setType(self::_AND);
+		$clause->setEscaped($escaped);
+		$clause->setArgs($left, $right, $operator);
+		return $clause;
 	}
 	
-	public static function _Or($left, $right, $operator=self::EQUALS, $escape=true)
+	public static function _Or($left, $right, $operator=self::EQUALS, $escaped=true)
 	{
-		$clause = new Clause(self::_OR, $escape);
-		return $clause->SetArgs($left, $right, $operator);
+		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause->setType(self::_OR);
+		$clause->setEscaped($escaped);
+		$clause->setArgs($left, $right, $operator);
+		return $clause;
+	}
+
+	/**
+	 * Ensure a type passed in conforms to the class constants
+	 * @param  integer $type
+	 * @throws tomcroft\tantrum\Exception\ClauseException
+	 * @return boolean
+	 */
+	public static function validateType($type)
+	{
+		if(in_array($type, array(
+			self::WHERE,
+			self::_AND,
+			self::_OR,
+			self::ON,
+		))) {
+			return true;
+		}
+		throw new Exception\ClauseException('Type not handled');		
+	}
+
+	protected function validateOperator($operator)
+	{
+		if(in_array($operator, array(
+			self::EQUALS,
+			self::NOT_EQUAL,
+			self::GREATER_THAN,
+			self::LESS_THAN,
+		))) {
+			return true;
+		}
+		throw new Exception\ClauseException('Operator not handled');
 	}
 }
