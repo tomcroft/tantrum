@@ -27,16 +27,11 @@ class Entity
 	public function __set($key, $value)
 	{
 		$key = $this->dB->MapColumnName($key);
-		if(!array_key_exists($key, $this->columns))
-		{
+		if(!array_key_exists($key, $this->columns)) {
 			throw new EntityException($strKey.' does not exist on this entity: '.print_r($mxdValue, 1), E_USER_NOTICE);
-		}
-		elseif($this->columns[$key]->IsPrimary() && !$this->autoSet)
-		{
+		} elseif($this->columns[$key]->IsPrimary() && !$this->autoSet) {
 			throw new EntityException('Setting a primary key: '.$key, E_USER_NOTICE);
-		}
-		else
-		{
+		} else {
 			$this->arrColumns[$key]->SetValue($value);
 		}
 	}
@@ -44,8 +39,7 @@ class Entity
 	public function __get($key)
 	{
 		$key = $this->dB->MapColumnName($key);
-		if(!array_key_exists($key, $this->columns))
-		{
+		if(!array_key_exists($key, $this->columns)) {
 			throw new EntityException('Variable '.$key.' does not exist on this entity.', E_USER_NOTICE);
 		}
 		return $this->arrColumns[$key]->GetValue();
@@ -53,30 +47,22 @@ class Entity
 	
 	public function __call($key, $filter = array())
 	{
-		if(is_callable($this->objects[$key]))
-		{
+		if(is_callable($this->objects[$key])) {
 			return call_user_func_array($this->objects[$key], array($this->columns[$key]->GetColumnName(), $this->columns[$key]->GetValue()));
-		}
-		else
-		{
+		} else {
 			throw new EntityException('Function '.$key.' does not exist on this entity.', E_USER_NOTICE);
 		}
 	}
 
 	public function Save($bolDeep=false)
 	{
-		if($this->IsModified())
-		{
-			if(!is_numeric($this->primary->GetValue()))
-			{
+		if($this->IsModified()) {
+			if(!is_numeric($this->primary->GetValue())) {
 				return $this->Create();
-			}
-			else
-			{
+			} else {
 				return $this->Update();
-			}
-			if($bolDeep === true)
-			{
+			} 
+			if($bolDeep === true) {
 				//$this->SaveEntities();
 			}
 		}
@@ -112,8 +98,7 @@ class Entity
 		$query = Query::Select($this->handle, NULL, $this->GetFieldObject())
 			->Where($key, $value);
 		$this->dB->Query($query);
-		foreach($this->dB->Fetch() as $key => $value)
-		{
+		foreach($this->dB->Fetch() as $key => $value) {
 			$this->$key = $value;
 		}
 		
@@ -121,10 +106,8 @@ class Entity
 	
 	public function IsModified()
 	{
-		foreach($this->columns as $columnName => $column)
-		{
-			if($column->IsModified() === true)
-			{
+		foreach($this->columns as $columnName => $column) {
+			if($column->IsModified() === true) {
 				return true;
 			}
 		}
@@ -136,26 +119,24 @@ class Entity
 		$key = __CLASS__.'::ColumnDefinitions.'.$this->handle;
 		$columns = $GLOBALS['objConfig']->Cache->Get($key);
 		list($schema, $table) = explode('.', $this->handle);
-		if(!$columns)
-		{
+		if(!$columns) {
 			$columns = $this->dB->GetColumnDefinitions($table);
 			$GLOBALS['objConfig']->Cache->Set($key, $columns);
 		}
 		
-		foreach($columns as $column)
-		{
+		foreach($columns as $column) {
+
 			$this->columns[$this->dB->MapColumnName($column->GetColumnName())] = $column;
-			if(!is_null($column->GetJoinSchema()))
-			{
-				$this->objects[$this->dB->MapColumnName($column->GetColumnName())] = function($key, $value)
-				{
+
+			if(!is_null($column->GetJoinSchema())) {
+				$this->objects[$this->dB->MapColumnName($column->GetColumnName())] = function($key, $value) {
 					$entity = new Entity($this->columns[$key]->GetJoinSchema());
 					$entity->LoadByKey($this->columns[$key]->GetJoinOn(), $value);
 					return $entity;
 				};
 			}
-			if($column->IsPrimary())
-			{
+
+			if($column->IsPrimary()) {
 				$this->primary = $column;
 			}
 		}
@@ -164,8 +145,7 @@ class Entity
 	protected function GetFieldObject()
 	{
 		$fieldCollection = new Fields();
-		foreach($this->columns as $key => $field)
-		{
+		foreach($this->columns as $key => $field) {
 			$columnName = $field->GetColumnName();
 			$fieldCollection->$columnName = $field->GetValue();
 		}
@@ -174,8 +154,7 @@ class Entity
 	
 	protected function ResetModified()
 	{
-		foreach($this->columns as $field)
-		{
+		foreach($this->columns as $field) {
 			$field->SetModified(false);
 		}
 	}
@@ -183,8 +162,7 @@ class Entity
 	protected function Cache()
 	{
 		$cache = array();
-		foreach($this->columns as $key => $field)
-		{
+		foreach($this->columns as $key => $field) {
 			$cache[$key] = $field->GetValue();
 		}
 	}

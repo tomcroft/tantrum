@@ -2,59 +2,88 @@
 
 namespace tomcroft\tantrum\QueryBuilder;
 
-class Join
+use tomcroft\tantrum\Core,
+	tomcroft\tantrum\Exception;
+
+class Join extends Core\Module
 {
 
 	const INNER = 1;
 	const LEFT = 2;
-	const STRAIGHT = 3;
 	
 	protected $type;
 	protected $alias;
-	protected $from;
+	protected $target;
 	
-	public function __construct($from, $type = self::STRAIGHT, $clauseCollection = null)
+	public function setAlias($alias)
 	{
-		//@TODO: Subclass this
+		//TODO: Validate this?
+		$this->alias = $alias;
+	}
+
+	public function setType($type)
+	{
+		$this->validateType($type);
 		$this->type = $type;
-		$this->from = $from;
+	}
+
+	public function setTarget($target)
+	{
+		//TODO: Validate this? 
+		$this->target = $target;
+	}
+
+	public function setClauseCollection(ClauseCollection $clauseCollection)
+	{
 		$this->clauseCollection = $clauseCollection;
 	}
 	
-	public function SetAlias($alias)
+	public function getAlias()
 	{
-		$this->alias = $alias;
+		return $this->alias;
 	}
 	
-	public function GetAlias()
-	{
-		return $this->slias;
-	}
-	
-	public function GetType()
+	public function getType()
 	{
 		return $this->type;
 	}
 	
-	public function GetTarget()
+	public function getTarget()
 	{
-		return $this->from;
+		return $this->target;
 	}
 	
-	public function GetClauseCollection()
+	public function getClauseCollection()
 	{
 		return $this->clauseCollection;
 	}
 	
-	public static function Inner($from, ClauseCollection $clauseCollection)
+	public static function Inner($target, ClauseCollection $clauseCollection)
 	{
-		$join = new Join($from, self::INNER, $clauseCollection);
+		$join = self::newInstance('tomcroft\tantrum\QueryBuilder\Join');
+		$join->setTarget($target);
+		$join->setType(self::INNER);
+		$join->setClauseCollection($clauseCollection);
 		return $join;
 	}
 	
-	public static function Left($from, ClauseCollection $clauseCollection)
+	public static function Left($target, ClauseCollection $clauseCollection)
 	{
-		$join = new Join($from, self::LEFT, $clauseCollection);
+		$join = self::newInstance('tomcroft\tantrum\QueryBuilder\Join');
+		$join->setTarget($target);
+		$join->setType(self::LEFT);
+		$join->setClauseCollection($clauseCollection);
 		return $join;
+	}
+
+	protected function validateType($type)
+	{
+		if (!in_array($type, array(
+			self::INNER,
+			self::LEFT,
+		))) {
+			throw new Exception\JoinException('Join type not handled');
+		}
+		return true;
 	}
 }

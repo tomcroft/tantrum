@@ -1,8 +1,11 @@
 <?php
 
 namespace tomcroft\tantrum\QueryBuilder;
+
+use tomcroft\tantrum\Core,
+	tomcroft\tantrum\Exception;
 	
-class Query 
+class Query extends Core\Module
 {
 	const SELECT = 1;
 	const INSERT = 2;
@@ -13,76 +16,218 @@ class Query
 	const DESC = 101;
 	
 	protected $type;
-	protected $name;
+	protected $target;
 	protected $alias;
 	protected $fields;
 	protected $clauses = array();
 	protected $joins = array();
 	protected $offset;
-	protected $start;
+	protected $limit;
 	protected $groupBy = array();
 	protected $orderBy = array();
 	protected $duplicateFieldsForUpdate;
-	
+
 	/**
-	 * @param integer $type  - one of self::SELECT, self::INSERT, self::UPDATE or self::DELETE 
-	 * @param string $name   - the table we're acting upon
-	 * @param string $alias  - the alias we'll give the table in the query
-	 * @param Fields $fields - an object containing the key/value pairs
+	 * Setter for the fields object
+	 * @param Fields $fields
+	 * @return void
 	 */
-	public function __construct($type, $name, $alias=null, $fields=null)
+	public function setFields(Fields $fields)
 	{
-		$this->type   = $type;
-		$this->fields = $fields?:new Fields();
-		$this->table  = $name;
-		$this->alias  = $alias;
+		$this->fields = $fields;
+	}
+
+	/**
+	 * Setter for the duplicateFieldsForUpdate object
+	 * @param  Fields $fields - an object representing key/value pairs
+	 * @return Query
+	 */
+	public function OnDuplicate(Fields $fields)
+	{
+		$this->duplicateFieldsForUpdate = $fields;
+		return $this;
+	}
+
+	/**
+	 * Set the table we're acting upon
+	 * @param  string $target
+	 * @return void
+	 */
+	public function setTarget($target)
+	{
+		$this->target = $target;
+	}
+
+	public function setType($type)
+	{
+		$this->validateType($type);
+		$this->type = $type;
+	}
+
+	/**
+	 * Setter for the table alias
+	 * @param [type] $alias [description]
+	 */
+	public function setAlias($alias)
+	{
+		$this->alias = $alias;
+	} 
+
+	/**
+	 * get the fields this query is inserting / updating
+	 * @return Fields
+	 */
+	public function getFields()
+	{
+		return $this->fields;
 	}
 	
 	/**
+	 * get the fields this query will update on a duplicate key violation
+	 */
+	public function getDuplicateFieldsForUpdate()
+	{
+		return $this->duplicateFieldsForUpdate;
+	}
+	
+	/**
+	 * Get the table name and schema (dot.notation)
+	 */
+	public function getTarget()
+	{
+		return $this->target;
+	}
+	
+	/**
+	 * returns an array of joins for this query
+	 * @return array
+	 */
+	public function getJoins()
+	{
+		return $this->joins;
+	}
+	
+	/**
+	 * get the clauses for this query
+	 */
+	public function getClauses()
+	{
+		return $this->clauses;
+	}
+	
+	/**
+	 * get the offset value
+	 * @return integer
+	 */
+	public function getOffset()
+	{
+		return $this->offset;
+	}
+	
+	/**
+	 * get the limit value
+	 * @return integer
+	 */
+	public function getLimit()
+	{
+		return $this->limit;
+	}
+	
+	/**
+	 * get the alias for the table we're acting upon
+	 * @return string
+	 */
+	public function getAlias()
+	{
+		//not sure if this should go here..
+		return $this->alias;
+	}
+	
+	/**
+	 * get the type of query
+	 * @return integer
+	 */
+	public function getType()
+	{
+		return $this->type;
+	}
+	
+	/**
+	 * get the columns we're grouping by
+	 * @return array
+	 */
+	public function getGroupBy()
+	{
+		return $this->groupBy;
+	}
+	
+	/**
+	 * get the columns we're ordering by
+	 * @return array
+	 */
+	public function getOrderBy()
+	{
+		return $this->orderBy;
+	}
+
+	/**
 	 * Create and return a SELECT query object
-	 * @param string $name   - the table we're acting upon
+	 * @param string $target - the table we're acting upon
 	 * @param string $alias  - the alias we'll give the table in the query
 	 * @param Fields $fields - an object containing the key/value pairs
 	 */
-	public static function Select($name, $alias=null, Fields $fields=null)
+	public static function Select($target, $alias = null, $fields = null)
 	{
-		$query = new Query(self::SELECT, $name, $alias, $fields);
+		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query->setType(self::SELECT);
+		$query->setTarget($target);
+		$query->setAlias($alias);
+		if(!is_null($fields) && ($fields instanceof \tomcroft\tantrum\QueryBuilder\Fields)) {
+			$query->setFields($fields);	
+		} 
 		return $query;
 	}
 	
 	/**
 	 * Create and return an INSERT query object
-	 * @param string $name   - the table we're acting upon
-	 * @param string $alias  - the alias we'll give the table in the query
+	 * @param string $target - the table we're acting upon
 	 * @param Fields $fields - an object containing the key/value pairs
 	 */
-	public static function Insert($name, $alias=null, Fields $fields)
+	public static function Insert($target, Fields $fields)
 	{
-		$query = new Query(self::INSERT, $name, $alias, $fields);
+		//TODO: Create an error handler for type hinting so we can throw tantrums ;)
+		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query->setType(self::INSERT);
+		$query->setTarget($target);
+		$query->setFields($fields);
 		return $query;
 	}
 	
 	/**
 	 * Create and return a DELETE query object
-	 * @param string $name   - the table we're acting upon
+	 * @param string $target - the table we're acting upon
 	 * @param string $alias  - the alias we'll give the table in the query
 	 * @param Fields $fields - an object containing the key/value pairs
 	 */
-	public static function Delete($name, $alias=null)
+	public static function Delete($target)
 	{
-		$query = new Query(self::DELETE, $name, $alias);
+		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query->setType(self::DELETE);
+		$query->setTarget($target);
 		return $query;
 	}
 	
 	/**
 	 * Create and return an UPDATE query object
-	 * @param string $name   - the table we're acting upon
-	 * @param string $alias  - the alias we'll give the table in the query
+	 * @param string $target - the table we're acting upon
 	 * @param Fields $fields - an object containing the key/value pairs
 	 */
-	public static function Update($name, $alias=null, Fields $fields)
+	public static function Update($target, Fields $fields)
 	{
-		$query = new Query(self::UPDATE, $name, $alias, $fields);
+		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query->setType(self::UPDATE);
+		$query->setTarget($target);
+		$query->setFields($fields);
 		return $query;
 	}
 	
@@ -94,8 +239,7 @@ class Query
 	 */
 	public function __call($command, $arguments)
 	{
-		switch($command)
-		{
+		switch($command) {
 			case 'And':
 				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_And');
 			break;
@@ -106,7 +250,7 @@ class Query
 				$reflectionMethod = new \ReflectionMethod(__CLASS__, '_Or');
 			break;
 			default:
-				throw new QueryException(sprintf('Method "%s" not handled.', $command));
+				throw new Exception\QueryException(sprintf('Method "%s" not handled.', $command));
 			break;
 		}
 		
@@ -167,46 +311,56 @@ class Query
 	/**
 	 * Start and limit for SELECT queries
 	 * @param  integer  $offset
-	 * @param  integer  $start
+	 * @param  integer  $limit
 	 * @return void
 	 */
-	public function Limit($offset, $start = 0)
+	public function Limit($offset, $limit = 0)
 	{
+		if(!is_int($offset)) {
+			throw new Exception\QueryException('Offset must be an integer');
+		} elseif($offset < 0) {
+			throw new Exception\QueryException('Offset must be a positive integer');
+		}
+		if(!is_int($limit)) {
+			throw new Exception\QueryException('Limit must be an integer');
+		} elseif($limit < 1) {
+			throw new Exception\QueryException('Limit must be a positive integer');
+		}
 		$this->offset = $offset;
-		$this->start = $start;
+		$this->limit = $limit;
 	}
 	
 	/**
 	 * Add an INNER join
-	 * @param string           $name             - The schema and table to join to (dot.notation)
+	 * @param string           $target           - The schema and table to join to (dot.notation)
 	 * @param ClauseCollection $clauseCollection
-	 * @param string           $alias            - An alias for the joined table
+	 * @param string           $alias            - An alias for the joined table (optional)
 	 * @return Query
 	 */
-	public function InnerJoin($name, ClauseCollection $objClauseCollection, $alias=null)
+	public function InnerJoin($target, ClauseCollection $clauseCollection, $alias=null)
 	{
-		list($table, $schema) = explode('.', $name);
+		@list($table, $schema) = explode('.', $target);
 		//@TODO: md5 could create an ambiguous or illegal alias name here
-		$alias = $alias?:uniqid(count($this->joins).$name);
-		$join = Join::Inner($name, $clauseCollection);
-		$join->SetAlias($alias);
+		$alias = $alias?:uniqid(count($this->joins).$target);
+		$join = Join::Inner($target, $clauseCollection);
+		$join->setAlias($alias);
 		$this->joins[$alias] = $join;
 		return $this;
 	}
 	
 	/**
 	 * Add a LEFT join
-	 * @param  string           $name             - The schema and table to join to (dot.notation)
+	 * @param  string           $target           - The schema and table to join to (dot.notation)
 	 * @param  ClauseCollection $clauseCollection
 	 * @param  string           $alias            - An alias for the joined table
 	 * @return Query
 	 */
-	public function LeftJoin($name, ClauseCollection $clauseClollection, $alias=null)
+	public function LeftJoin($target, ClauseCollection $clauseCollection, $alias=null)
 	{
-		list($table, $schema) = explode('.', $name);
+		@list($table, $schema) = explode('.', $target);
 		//@TODO: md5 could create an ambiguous or illegal alias name here
-		$alias = $alias?:uniqid(count($this->joins).$strSchema.$strTable);
-		$join = Join::Left($name, $clauseCollection);
+		$alias = $alias?:uniqid(count($this->joins).$schema.$table);
+		$join = Join::Left($target, $clauseCollection);
 		$join->SetAlias($alias);
 		$this->joins[$alias] = $join;
 		return $this;
@@ -214,10 +368,11 @@ class Query
 	
 	/**
 	 * Group the results by a field
-	 * @param [type] $groupBy [description]
+	 * @param string $groupBy
 	 */
 	public function GroupBy($groupBy)
 	{
+		//TODO: If this is attempting to group by an aliased field, validate that alias
 		$this->groupBy[] = $groupBy;
 		return $this;
 	}
@@ -229,116 +384,9 @@ class Query
 	 */
 	public function OrderBy($orderBy, $direction=self::ASC)
 	{
+		$this->validateDirection($direction);
 		$this->orderBy[$orderBy] = $direction;
 		return $this;
-	}
-	
-	/**
-	 * List fields to update on a duplicate key violation
-	 * @param  Fields $fields - an object representing key/value pairs
-	 * @return Query
-	 */
-	public function OnDuplicate(Fields $fields)
-	{
-		$this->duplicateFieldsForUpdate = $fields;
-		return $this;
-	}
-	
-	/**
-	 * get the fields this query is inserting / updating
-	 * @return Fields
-	 */
-	public function GetFields()
-	{
-		return $this->fields;
-	}
-	
-	/**
-	 * get the fields this query will update on a duplicate key violation
-	 */
-	public function GetDuplicateFieldsForUpdate()
-	{
-		return $this->duplicateFieldsForUpdate;
-	}
-	
-	/**
-	 * get the table name and schema (dot.notation)
-	 */
-	public function GetFrom()
-	{
-		return $this->from;
-	}
-	
-	/**
-	 * returns an array of joins for this query
-	 * @return array
-	 */
-	public function GetJoins()
-	{
-		return $this->joins;
-	}
-	
-	/**
-	 * get the clauses for this query
-	 */
-	public function GetClauses()
-	{
-		return $this->clauses;
-	}
-	
-	/**
-	 * get the offset value
-	 * @return integer
-	 */
-	public function GetOffset()
-	{
-		return $this->offset;
-	}
-	
-	/**
-	 * get the start value
-	 * @return integer
-	 */
-	public function GetStart()
-	{
-		return $this->start;
-	}
-	
-	/**
-	 * get the alias for the table we're acting upon
-	 * @return string
-	 */
-	public function GetAlias()
-	{
-		//not sure if this should go here..
-		return $this->alias;
-	}
-	
-	/**
-	 * get the type of query
-	 * @return integer
-	 */
-	public function GetType()
-	{
-		return $this->type;
-	}
-	
-	/**
-	 * get the columns we're grouping by
-	 * @return array
-	 */
-	public function GetGroupBy()
-	{
-		return $this->groupBy;
-	}
-	
-	/**
-	 * get the columns we're ordering by
-	 * @return array
-	 */
-	public function GetOrderBy()
-	{
-		return $this->orderBy;
 	}
 	
 	/**
@@ -347,7 +395,7 @@ class Query
 	 * @param  array $parameters [description]
 	 * @return array
 	 */
-	public function GetParameters($clauses = null, $parameters = array())
+	public function getParameters($clauses = null, $parameters = array())
 	{
 		$clauses = is_null($clauses)?$this->clauses:$clauses;
 		foreach ($clauses as $clause)	{
@@ -361,5 +409,35 @@ class Query
 			}
 		}
 		return $parameters;
+	}
+
+	/**
+	 * Validate that the type passed is acceptable
+	 * @param  integer $type
+	 * @throws QueryException
+	 * @return boolean
+	 */
+	protected function validateType($type)
+	{
+		if (!in_array($type, array(
+			self::SELECT,
+			self::INSERT,
+			self::UPDATE,
+			self::DELETE,
+		))) {
+			throw new Exception\QueryException('Query type not handled');
+		}
+		return true;
+	}
+
+	protected function validateDirection($direction)
+	{
+		if (!in_array($direction, array(
+			self::ASC,
+			self::DESC,
+		))) {
+			throw new Exception\QueryException('Direction not handled');
+		}
+		return true;
 	}
 }

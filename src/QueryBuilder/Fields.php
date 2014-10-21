@@ -5,9 +5,7 @@ namespace tomcroft\tantrum\QueryBuilder;
 class Fields
 {
 
-	use tomcroft\tantrum\Traits\Collection;
-
-	protected $data = array();
+	use \tomcroft\tantrum\Traits\Collection;
 
 	public function __construct()
 	{
@@ -15,12 +13,9 @@ class Fields
 		
 		foreach($data as $field)
 		{
-			if(is_array($field))
-			{
+			if(is_array($field)) {
 				$this->data[array_keys($field)[0]] = array_values($field)[0];
-			}
-			else
-			{
+			} else {
 				$this->data[$field] = $field;
 			}
 		}
