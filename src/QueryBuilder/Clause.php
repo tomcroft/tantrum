@@ -1,9 +1,9 @@
 <?php
 
-namespace tomcroft\tantrum\QueryBuilder;
+namespace tantrum\QueryBuilder;
 
-use tomcroft\tantrum\Exception,
-	tomcroft\tantrum\Core;
+use tantrum\Exception,
+	tantrum\Core;
 
 class Clause extends Core\Module
 {
@@ -42,8 +42,8 @@ class Clause extends Core\Module
 	 * @param mixed $left  - the left operand
 	 * @param mixed $right - the right operand
 	 * @param integer $operator - the operator
-	 * @throws tomcroft\tantrum\Exception\ClauseException
-	 * @return tomcroft\tantrum\QueryBuilder\Clause
+	 * @throws tantrum\Exception\ClauseException
+	 * @return tantrum\QueryBuilder\Clause
 	 */
 	public function setArgs($left, $right, $operator)
 	{
@@ -79,11 +79,11 @@ class Clause extends Core\Module
 	
 	public static function Where($left, $right, $operator=self::EQUALS, $escaped=false)
 	{
-		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause = self::newInstance('tantrum\QueryBuilder\Clause');
 		$clause->setType(self::WHERE);
 		$clause->setEscaped($escaped);
 		$clause->setArgs($left, $right, $operator);
-		$clauseCollection = self::newInstance('tomcroft\tantrum\QueryBuilder\ClauseCollection');
+		$clauseCollection = self::newInstance('tantrum\QueryBuilder\ClauseCollection');
 		$clauseCollection->addClause($clause);
 		$clauseCollection->setType(self::WHERE);
 		return $clauseCollection;
@@ -91,11 +91,11 @@ class Clause extends Core\Module
 	
 	public static function On($left, $right, $operator=self::EQUALS, $escaped=false)
 	{
-		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause = self::newInstance('tantrum\QueryBuilder\Clause');
 		$clause->setType(self::ON);
 		$clause->setEscaped($escaped);
 		$clause->setArgs($left, $right, $operator);
-		$clauseCollection = self::newInstance('tomcroft\tantrum\QueryBuilder\ClauseCollection');
+		$clauseCollection = self::newInstance('tantrum\QueryBuilder\ClauseCollection');
 		$clauseCollection->addClause($clause);
 		$clauseCollection->setType(self::ON);
 		return $clauseCollection;
@@ -103,7 +103,7 @@ class Clause extends Core\Module
 	
 	public static function _And($left, $right, $operator=self::EQUALS, $escaped=true)
 	{
-		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause = self::newInstance('tantrum\QueryBuilder\Clause');
 		$clause->setType(self::_AND);
 		$clause->setEscaped($escaped);
 		$clause->setArgs($left, $right, $operator);
@@ -112,7 +112,7 @@ class Clause extends Core\Module
 	
 	public static function _Or($left, $right, $operator=self::EQUALS, $escaped=true)
 	{
-		$clause = self::newInstance('tomcroft\tantrum\QueryBuilder\Clause');
+		$clause = self::newInstance('tantrum\QueryBuilder\Clause');
 		$clause->setType(self::_OR);
 		$clause->setEscaped($escaped);
 		$clause->setArgs($left, $right, $operator);
@@ -122,7 +122,7 @@ class Clause extends Core\Module
 	/**
 	 * Ensure a type passed in conforms to the class constants
 	 * @param  integer $type
-	 * @throws tomcroft\tantrum\Exception\ClauseException
+	 * @throws tantrum\Exception\ClauseException
 	 * @return boolean
 	 */
 	public static function validateType($type)

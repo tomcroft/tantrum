@@ -1,11 +1,11 @@
 <?php
 
-namespace tomcroft\tantrum\QueryBuilder;
+namespace tantrum\QueryBuilder;
 
 class Fields
 {
 
-	use \tomcroft\tantrum\Traits\Collection;
+	use \tantrum\Traits\Collection;
 
 	public function __construct()
 	{

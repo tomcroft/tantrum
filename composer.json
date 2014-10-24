@@ -1,8 +1,24 @@
 {
     "name": "tomcroft/tantrum",
+    "description": "A small ORM package for php",
+    "type" : "library",
+    "keywords": ["database, php, mysql, ORM"],
+    "license": "GPL-3.0+",
+    "authors": [
+        {
+            "name": "Tom Croft",
+            "email": "tom@dev-ops.co.uk",
+            "role": "developer"
+        }
+    ],
     "autoload": {
         "psr-4" : {
-            "tomcroft\\tantrum\\" : "src/"
+            "tantrum\\" : "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": { 
+            "tantrum\\tests\\": "tests/"
         }
     },
     "require-dev": {

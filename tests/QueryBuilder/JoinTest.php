@@ -1,8 +1,8 @@
 <?php
 
-namespace tests\lib;
+namespace tantrum\tests;
 
-use tomcroft\tantrum\QueryBuilder;
+use tantrum\QueryBuilder;
 
 class JoinTest extends TestCase
 {
@@ -31,7 +31,7 @@ class JoinTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\JoinException
+     * @expectedException \tantrum\Exception\JoinException
      */
     public function setTypeThrowsJoinException()
     {
@@ -69,7 +69,7 @@ class JoinTest extends TestCase
         $target = uniqid();
         $clauseCollection = new QueryBuilder\ClauseCollection();
         $join = QueryBuilder\Join::Inner($target, $clauseCollection);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Join', get_class($join));
+        $this->assertEquals('tantrum\QueryBuilder\Join', get_class($join));
         $this->assertEquals($target, $join->getTarget());
         $this->assertEquals(QueryBuilder\Join::INNER, $join->getType());
         $this->assertSame($clauseCollection, $join->getClauseCollection());
@@ -83,7 +83,7 @@ class JoinTest extends TestCase
         $target = uniqid();
         $clauseCollection = new QueryBuilder\ClauseCollection();
         $join = QueryBuilder\Join::Left($target, $clauseCollection);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Join', get_class($join));
+        $this->assertEquals('tantrum\QueryBuilder\Join', get_class($join));
         $this->assertEquals($target, $join->getTarget());
         $this->assertEquals(QueryBuilder\Join::LEFT, $join->getType());
         $this->assertSame($clauseCollection, $join->getClauseCollection());

@@ -1,10 +1,11 @@
 <?php
 
-namespace tomcroft\tantrum\Entity;
+namespace tantrum\Entity;
 
-use tomcroft\tantrum\Exception;
+use tantrum\Core,
+	tantrum\Exception;
 
-class Entity 
+class Entity extends Core\Module 
 {
 
 	protected $dB;
@@ -15,9 +16,8 @@ class Entity
 	
 	private $autoSet;
 	
-	public function __construct($handle, $autoSet=false)
+	public function __construct($handle)
 	{
-		$this->autoSet = $autoSet;
 		$this->handle = $handle;
 		list($schema, $table) = explode('.', $handle);
 		$this->dB = $GLOBALS['objConfig']->DB($schema);	
@@ -26,19 +26,17 @@ class Entity
 	
 	public function __set($key, $value)
 	{
-		$key = $this->dB->MapColumnName($key);
+		$key = $this->dB->MapColumnName($key); //TODO: Make this a listener
 		if(!array_key_exists($key, $this->columns)) {
-			throw new EntityException($strKey.' does not exist on this entity: '.print_r($mxdValue, 1), E_USER_NOTICE);
-		} elseif($this->columns[$key]->IsPrimary() && !$this->autoSet) {
-			throw new EntityException('Setting a primary key: '.$key, E_USER_NOTICE);
+			throw new EntityException($key.' does not exist on this entity: '.print_r($value, 1), E_USER_NOTICE);
 		} else {
-			$this->arrColumns[$key]->SetValue($value);
+			$this->columns[$key]->setValue($value);
 		}
 	}
 	
 	public function __get($key)
 	{
-		$key = $this->dB->MapColumnName($key);
+		$key = $this->dB->MapColumnName($key); //TODO: Make this a listener
 		if(!array_key_exists($key, $this->columns)) {
 			throw new EntityException('Variable '.$key.' does not exist on this entity.', E_USER_NOTICE);
 		}
@@ -54,18 +52,16 @@ class Entity
 		}
 	}
 
-	public function Save($bolDeep=false)
+	public function Save()
 	{
 		if($this->IsModified()) {
 			if(!is_numeric($this->primary->GetValue())) {
 				return $this->Create();
 			} else {
 				return $this->Update();
-			} 
-			if($bolDeep === true) {
-				//$this->SaveEntities();
 			}
 		}
+		return false;
 	}
 	
 	protected function Create()

@@ -1,6 +1,6 @@
 <?php
 
-namespace tomcroft\tantrum\Exception;
+namespace tantrum\Exception;
 
 class Exception extends \Exception 
 {

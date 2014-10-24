@@ -1,6 +1,6 @@
 <?php
 
-namespace tomcroft\tantrum\Database;
+namespace tantrum\Database;
 
 interface DatabaseAdaptorInterface
 {   

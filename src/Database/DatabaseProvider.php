@@ -1,8 +1,8 @@
 <?php
 
-namespace tomcroft\tantrum\Database;
+namespace tantrum\Database;
 
-use tomcroft\tantrum\DatabaseException;
+use tantrum\DatabaseException;
 
 class DatabaseProvider
 {

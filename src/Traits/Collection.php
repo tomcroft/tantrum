@@ -1,6 +1,6 @@
 <?php
 
-namespace tomcroft\tantrum\Traits;
+namespace tantrum\Traits;
 
 trait Collection
 {
@@ -17,12 +17,12 @@ trait Collection
 		return $this->data[$key];
 	}
 	
-	public function Count()
+	public function count()
 	{
 		return count($this->data);
 	}
 	
-	public function IsEmpty()
+	public function isEmpty()
 	{
 		return $this->Count() === 0;
 	}
