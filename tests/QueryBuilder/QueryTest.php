@@ -1,8 +1,8 @@
 <?php
 
-namespace tests\lib;
+namespace tantrum\tests;
 
-use tomcroft\tantrum\QueryBuilder;
+use tantrum\QueryBuilder;
 
 class QueryTest extends TestCase
 {
@@ -53,7 +53,7 @@ class QueryTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\QueryException
+     * @expectedException \tantrum\Exception\QueryException
      */
     public function setTypeThrowsQueryException()
     {
@@ -88,7 +88,7 @@ class QueryTest extends TestCase
     /**
      * @test
      * @dataProvider invalidLimitDataProvider
-     * @expectedException tomcroft\tantrum\Exception\QueryException
+     * @expectedException \tantrum\Exception\QueryException
      */
     public function limitThrowsQueryException($offset, $limit)
     {
@@ -123,7 +123,7 @@ class QueryTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\QueryException
+     * @expectedException \tantrum\Exception\QueryException
      */
     public function orderByThrowsQueryException()
     {
@@ -138,7 +138,7 @@ class QueryTest extends TestCase
     public function selectSucceeds($target, $alias, $fields)
     {
         $query = QueryBuilder\Query::Select($target, $alias, $fields);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Query', get_class($query));
+        $this->assertEquals('tantrum\QueryBuilder\Query', get_class($query));
         $this->assertEquals(QueryBuilder\Query::SELECT, $query->getType());
         $this->assertEquals($target, $query->getTarget());
         $this->assertEquals($alias, $query->getAlias());
@@ -154,7 +154,7 @@ class QueryTest extends TestCase
         $fields = new QueryBuilder\Fields();
         $query = QueryBuilder\Query::Insert($target, $fields);
         $this->assertEquals(QueryBuilder\Query::INSERT, $query->getType());
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Query', get_class($query));
+        $this->assertEquals('tantrum\QueryBuilder\Query', get_class($query));
         $this->assertEquals($target, $query->getTarget());
         $this->assertSame($fields, $query->getFields());
     }
@@ -166,7 +166,7 @@ class QueryTest extends TestCase
     {
         $target = uniqid();
         $query = QueryBuilder\Query::Delete($target);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Query', get_class($query));
+        $this->assertEquals('tantrum\QueryBuilder\Query', get_class($query));
         $this->assertEquals(QueryBuilder\Query::DELETE, $query->getType());
         $this->assertEquals($target, $query->getTarget());
     }
@@ -179,7 +179,7 @@ class QueryTest extends TestCase
         $target = uniqid();
         $fields = new QueryBuilder\Fields();
         $query = QueryBuilder\Query::Update($target, $fields);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Query', get_class($query));
+        $this->assertEquals('tantrum\QueryBuilder\Query', get_class($query));
         $this->assertEquals(QueryBuilder\Query::UPDATE, $query->getType());
         $this->assertEquals($target, $query->getTarget());
         $this->assertSame($fields, $query->getFields());
@@ -198,7 +198,7 @@ class QueryTest extends TestCase
         $this->assertArray($joins);
         $this->assertCount(1, $joins);
         $join = $joins[key($joins)];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Join', get_class($join));
+        $this->assertEquals('tantrum\QueryBuilder\Join', get_class($join));
         $this->assertEquals(QueryBuilder\Join::INNER, $join->getType());
         if(!is_null($alias)) {
             $this->assertEquals($alias, $join->getAlias());
@@ -221,7 +221,7 @@ class QueryTest extends TestCase
         $this->assertArray($joins);
         $this->assertCount(1, $joins);
         $join = $joins[key($joins)];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Join', get_class($join));
+        $this->assertEquals('tantrum\QueryBuilder\Join', get_class($join));
         $this->assertEquals(QueryBuilder\Join::LEFT, $join->getType());
         if(!is_null($alias)) {
             $this->assertEquals($alias, $join->getAlias());
@@ -229,6 +229,257 @@ class QueryTest extends TestCase
             $this->assertTrue(strlen($join->getAlias()) > 0);
         }
         $this->assertSame($clauseCollection, $join->getClauseCollection());
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseValidDataProvider
+     */
+    public function _whereCreatesClauseCollection($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->_Where($left, $right, $operator, $escaped);
+        $this->assertSame($query, $return);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertEquals('tantrum\QueryBuilder\ClauseCollection', get_class($clauseCollection));
+        $this->assertEquals(QueryBuilder\Clause::WHERE, $clauseCollection->getType());
+        $clauses = $clauseCollection->toArray();
+        $this->assertarray($clauses);
+        $this->assertCount(1, $clauses);
+        $clause = $clauses[0];
+        $this->assertEquals(array($left, $right), $clause->getArgs());
+        $this->assertEquals($operator, $clause->getOperator());
+        $this->assertEquals($escaped, $clause->isEscaped());
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseCollectionValidDataProvider
+     */
+    public function _whereSucceeds($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->_Where($left, $right, $operator, $escaped);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertSame($left, $clauseCollection);
+    }
+    
+    /**
+     * @test
+     * @dataProvider clauseValidDataProvider
+     */
+    public function _andCreatesClause($left, $right, $operator, $escape)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->_And($left, $right, $operator, $escape);
+        $this->assertSame($query, $return);
+        $clauses = $return->getClauses();
+        $this->assertArray($clauses);
+        $this->assertCount(1, $clauses);
+        $clause = $clauses[0];
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals(QueryBuilder\Clause::_AND, $clause->getType());
+        $this->assertEquals($operator, $clause->getOperator());
+        $this->assertEquals($escape, $clause->isEscaped());
+        $this->assertEquals(array($left, $right), $clause->getArgs());
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseCollectionValidDataProvider
+     */
+    public function _andSucceeds($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->_And($left, $right, $operator, $escaped);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertSame($left, $clauseCollection);
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseValidDataProvider
+     */
+    public function _orCreatesClause($left, $right, $operator, $escape)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->_Or($left, $right, $operator, $escape);
+        $this->assertSame($query, $return);
+        $clauses = $return->getClauses();
+        $this->assertArray($clauses);
+        $this->assertCount(1, $clauses);
+        $clause = $clauses[0];
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals(QueryBuilder\Clause::_OR, $clause->getType());
+        $this->assertEquals(array($left, $right), $clause->getArgs());
+        $this->assertEquals($operator, $clause->getOperator());
+        $this->assertEquals($escape, $clause->isEscaped());
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseCollectionValidDataProvider
+     */
+    public function _orSucceeds($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->_Or($left, $right, $operator, $escaped);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertSame($left, $clauseCollection);
+        $this->assertEquals(QueryBuilder\Clause::_OR, $clauseCollection->getType());
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseValidDataProvider
+     */
+    public function __callWhereCreatesClauseCollection($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->Where($left, $right, $operator, $escaped);
+        $this->assertSame($query, $return);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertEquals('tantrum\QueryBuilder\ClauseCollection', get_class($clauseCollection));
+        $this->assertEquals(QueryBuilder\Clause::WHERE, $clauseCollection->getType());
+        $clauses = $clauseCollection->toArray();
+        $this->assertarray($clauses);
+        $this->assertCount(1, $clauses);
+        $clause = $clauses[0];
+        $this->assertEquals(array($left, $right), $clause->getArgs());
+        $this->assertEquals($operator, $clause->getOperator());
+        $this->assertEquals($escaped, $clause->isEscaped());
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseCollectionValidDataProvider
+     */
+    public function __callWhereSucceeds($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->Where($left, $right, $operator, $escaped);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertSame($left, $clauseCollection);
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseValidDataProvider
+     */
+    public function __callAndCreatesClause($left, $right, $operator, $escape)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->And($left, $right, $operator, $escape);
+        $this->assertSame($query, $return);
+        $clauses = $return->getClauses();
+        $this->assertArray($clauses);
+        $this->assertCount(1, $clauses);
+        $clause = $clauses[0];
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals(QueryBuilder\Clause::_AND, $clause->getType());
+        $this->assertEquals($operator, $clause->getOperator());
+        $this->assertEquals($escape, $clause->isEscaped());
+        $this->assertEquals(array($left, $right), $clause->getArgs());
+    }
+    
+    /**
+     * @test
+     * @dataProvider clauseCollectionValidDataProvider
+     */
+    public function __callAndSucceeds($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->And($left, $right, $operator, $escaped);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertSame($left, $clauseCollection);
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseValidDataProvider
+     */
+    public function __callOrCreatesClause($left, $right, $operator, $escape)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->Or($left, $right, $operator, $escape);
+        $this->assertSame($query, $return);
+        $clauses = $return->getClauses();
+        $this->assertArray($clauses);
+        $this->assertCount(1, $clauses);
+        $clause = $clauses[0];
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals(QueryBuilder\Clause::_OR, $clause->getType());
+        $this->assertEquals(array($left, $right), $clause->getArgs());
+        $this->assertEquals($operator, $clause->getOperator());
+        $this->assertEquals($escape, $clause->isEscaped());
+    }
+
+    /**
+     * @test
+     * @dataProvider clauseCollectionValidDataProvider
+     */
+    public function __callOr($left, $right, $operator, $escaped)
+    {
+        $query = new QueryBuilder\Query();
+        $return = $query->Or($left, $right, $operator, $escaped);
+        $clauseCollections = $return->getClauses();
+        $this->assertArray($clauseCollections);
+        $this->assertCount(1, $clauseCollections);
+        $clauseCollection = $clauseCollections[0];
+        $this->assertSame($left, $clauseCollection);
+        $this->assertEquals(QueryBuilder\Clause::_OR, $clauseCollection->getType());
+    }
+
+    /**
+     * @test
+     */
+    public function getParametersSucceeds()
+    {
+        $target = uniqid();
+        $parameters = array(
+            'parameter0',
+            'parameter1',
+            'parameter2',
+        );
+        
+        $query = QueryBuilder\Query::Select($target)
+            ->Where('key0', 'parameter0', QueryBuilder\Clause::EQUALS, true)
+            ->And('key1', 'parameter1', QueryBuilder\Clause::NOT_EQUAL, true)
+            ->Or('key2', 'parameter2', QueryBuilder\Clause::GREATER_THAN, true);
+
+        $this->assertEquals($parameters, $query->getParameters());
+    }
+
+    /**
+     * @test
+     * @expectedException \tantrum\Exception\QueryException
+     */
+    public function __callThrowsQueryException()
+    {
+        $call = uniqid();
+        $query = new QueryBuilder\Query();
+        $query->$call();
     }
 
     // Data Providers
@@ -278,6 +529,36 @@ class QueryTest extends TestCase
             array(uniqid(), new QueryBuilder\ClauseCollection(), uniqid()),
             array(uniqid(), new QueryBuilder\ClauseCollection(), null),
             array(uniqid(), new QueryBuilder\ClauseCollection()),
+        );
+    }
+
+    public function clauseValidDataProvider()
+    {
+        return array(
+            array('leftOperand', null, QueryBuilder\Clause::NOT_EQUAL, false),
+            array('leftOperand', 'rightOperand', QueryBuilder\Clause::NOT_EQUAL, false),
+            array('leftOperand', 'rightOperand', QueryBuilder\Clause::EQUALS, false),
+            array('leftOperand', 'rightOperand', QueryBuilder\Clause::EQUALS, false),
+            array('leftOperand', 'rightOperand', QueryBuilder\Clause::EQUALS, true),
+            array('leftOperand', 'rightOperand', QueryBuilder\Clause::NOT_EQUAL, false),
+            array('leftOperand', 'rightOperand', QueryBuilder\Clause::LESS_THAN, false),
+            array('leftOperand', 'rightOperand', QueryBuilder\Clause::GREATER_THAN, false),
+            array('leftOperand', null , QueryBuilder\Clause::EQUALS, false),
+        );
+    }
+
+    public function clauseCollectionValidDataProvider()
+    {
+        return array(
+            array(new QueryBuilder\ClauseCollection(), null, QueryBuilder\Clause::NOT_EQUAL, false),
+            array(new QueryBuilder\ClauseCollection(), 'rightOperand', QueryBuilder\Clause::NOT_EQUAL, false),
+            array(new QueryBuilder\ClauseCollection(), 'rightOperand', QueryBuilder\Clause::EQUALS, false),
+            array(new QueryBuilder\ClauseCollection(), 'rightOperand', QueryBuilder\Clause::EQUALS, false),
+            array(new QueryBuilder\ClauseCollection(), 'rightOperand', QueryBuilder\Clause::EQUALS, true),
+            array(new QueryBuilder\ClauseCollection(), 'rightOperand', QueryBuilder\Clause::NOT_EQUAL, false),
+            array(new QueryBuilder\ClauseCollection(), 'rightOperand', QueryBuilder\Clause::LESS_THAN, false),
+            array(new QueryBuilder\ClauseCollection(), 'rightOperand', QueryBuilder\Clause::GREATER_THAN, false),
+            array(new QueryBuilder\ClauseCollection(), null , QueryBuilder\Clause::EQUALS, false),
         );
     }
 }

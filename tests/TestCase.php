@@ -1,6 +1,6 @@
 <?php
 
-namespace tests\lib;
+namespace tantrum\tests;
 
 use \Mockery;
 
@@ -10,7 +10,7 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
     {
         $mock = \Mockery::mock($class)->makePartial();
         $key = get_parent_class($mock);
-        return \tomcroft\tantrum\Core\Container::injectInstance($key, $mock);
+        return \tantrum\Core\Container::injectInstance($key, $mock);
     }
 
     public function assertArray($value)
@@ -21,6 +21,6 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
     public function tearDown()
     {
         \Mockery::close();
-        \tomcroft\tantrum\Core\Container::flush();
+        \tantrum\Core\Container::flush();
     }
 }

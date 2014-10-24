@@ -1,16 +1,21 @@
 <?php
 
-namespace tomcroft\tantrum\QueryBuilder;
+namespace tantrum\QueryBuilder;
 
 class Field
 {
-	protected $columnName = NULL;
-	protected $columnKey = NULL;
-	protected $joinDatabase = NULL;
-	protected $joinTable = NULL;
-	protected $joinOn = NULL;
-	protected $modified = FALSE;
-	protected $value = NULL;
+	protected $columnName = null;
+	protected $required = null;
+	protected $maximumLength = null;
+	protected $columnKey = null;
+	protected $joinDatabase = null;
+	protected $joinTable = null;
+	protected $joinOn = null;
+	protected $modified = false;
+	protected $hasExternalReferences = null;
+	protected $ordinalPosition = null;
+	protected $positionINUniqueConstraint = null;
+	protected $value = null;
 	
 	public function setValue($value)
 	{

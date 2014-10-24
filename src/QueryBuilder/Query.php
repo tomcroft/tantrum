@@ -1,9 +1,9 @@
 <?php
 
-namespace tomcroft\tantrum\QueryBuilder;
+namespace tantrum\QueryBuilder;
 
-use tomcroft\tantrum\Core,
-	tomcroft\tantrum\Exception;
+use tantrum\Core,
+	tantrum\Exception;
 	
 class Query extends Core\Module
 {
@@ -178,11 +178,11 @@ class Query extends Core\Module
 	 */
 	public static function Select($target, $alias = null, $fields = null)
 	{
-		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query = self::newInstance('tantrum\QueryBuilder\Query');
 		$query->setType(self::SELECT);
 		$query->setTarget($target);
 		$query->setAlias($alias);
-		if(!is_null($fields) && ($fields instanceof \tomcroft\tantrum\QueryBuilder\Fields)) {
+		if(!is_null($fields) && ($fields instanceof \tantrum\QueryBuilder\Fields)) {
 			$query->setFields($fields);	
 		} 
 		return $query;
@@ -196,7 +196,7 @@ class Query extends Core\Module
 	public static function Insert($target, Fields $fields)
 	{
 		//TODO: Create an error handler for type hinting so we can throw tantrums ;)
-		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query = self::newInstance('tantrum\QueryBuilder\Query');
 		$query->setType(self::INSERT);
 		$query->setTarget($target);
 		$query->setFields($fields);
@@ -211,7 +211,7 @@ class Query extends Core\Module
 	 */
 	public static function Delete($target)
 	{
-		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query = self::newInstance('tantrum\QueryBuilder\Query');
 		$query->setType(self::DELETE);
 		$query->setTarget($target);
 		return $query;
@@ -224,7 +224,7 @@ class Query extends Core\Module
 	 */
 	public static function Update($target, Fields $fields)
 	{
-		$query = self::newInstance('tomcroft\tantrum\QueryBuilder\Query');
+		$query = self::newInstance('tantrum\QueryBuilder\Query');
 		$query->setType(self::UPDATE);
 		$query->setTarget($target);
 		$query->setFields($fields);
@@ -268,7 +268,7 @@ class Query extends Core\Module
 	public function _Where($left, $right=null, $operator = Clause::EQUALS, $escape=true)
 	{
 		$this->clauses[] = ($left instanceof ClauseCollection)
-									? $left
+									? $left //TODO: What if this has no clauses inside it?
 									: Clause::Where($left, $right, $operator, $escape);
 		return $this;
 	}
@@ -284,7 +284,7 @@ class Query extends Core\Module
 	public function _And($left, $right=null, $operator = Clause::EQUALS, $escape=true)
 	{
 		$this->clauses[] = ($left instanceof ClauseCollection)
-									? $left
+									? $left //TODO: What if this has no clauses inside it?
 									: CLAUSE::_And($left, $right, $operator, $escape);
 		return $this;
 	}
@@ -301,9 +301,9 @@ class Query extends Core\Module
 	{
 		if ($left instanceof ClauseCollection) {
 			$left->SetType(Clause::_OR);
-			$this->clauses[] = $left;
+			$this->clauses[] = $left; //TODO: What if this has no clauses inside it?
 		} else {
-			CLAUSE::_Or($left, $right, $operator, $escape);
+			$this->clauses[] = CLAUSE::_Or($left, $right, $operator, $escape);
 		}
 		return $this;
 	}
@@ -403,7 +403,7 @@ class Query extends Core\Module
 				$parameters = array_merge($this->GetParameters($clause->ToArray()), $parameters);
 			} else {	
 				list($left, $right) = $clause->GetArgs();
-				if ($clause->Escape() === true) {
+				if ($clause->isEscaped() === true) {
 					$parameters[] = $right;
 				}
 			}

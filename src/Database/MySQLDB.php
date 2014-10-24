@@ -1,6 +1,6 @@
 <?php
 
-namespace tomcroft\tantrum\Database;
+namespace tantrum\Database;
 
 class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 {
@@ -102,19 +102,18 @@ class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
 	public function GetColumnDefinitions($table)
 	{
 		$query = Query::Select('information_schema.COLUMNS','c',
-			new Fields('c.COLUMN_NAME AS strColumnName',
-				'c.DATA_TYPE AS strDataType',
-				'IF(c.IS_NULLABLE="No",1,0) AS bolRequired',
-				'c.CHARACTER_MAXIMUM_LENGTH AS intMaximumLength',
-				'c.COLUMN_KEY AS strColumnKey',
-				'kcu.REFERENCED_TABLE_SCHEMA as strJoinDatabase',
-				'kcu.REFERENCED_TABLE_NAME as strJoinTable',
-				'kcu.REFERENCED_COLUMN_NAME as strJoinOn',				
-				'0 AS bolExtensionColumn',
-				'0 as bolModified',
-				'IF(kcu2.COLUMN_NAME IS NOT NULL, 1, 0) AS bolHasExternalReferences',
-				'c.ORDINAL_POSITION AS intOrdinalPosition',
-				'kcu.POSITION_IN_UNIQUE_CONSTRAINT AS intPositionInUniqueConstraint'))
+			new Fields('c.COLUMN_NAME AS columnName',
+				'c.DATA_TYPE AS dataType',
+				'IF(c.IS_NULLABLE="No",1,0) AS required',
+				'c.CHARACTER_MAXIMUM_LENGTH AS maximumLength',
+				'c.COLUMN_KEY AS columnKey',
+				'kcu.REFERENCED_TABLE_SCHEMA as joinDatabase',
+				'kcu.REFERENCED_TABLE_NAME as joinTable',
+				'kcu.REFERENCED_COLUMN_NAME as joinOn',
+				'0 as modified',
+				'IF(kcu2.COLUMN_NAME IS NOT NULL, 1, 0) AS hasExternalReferences',
+				'c.ORDINAL_POSITION AS ordinalPosition',
+				'kcu.POSITION_IN_UNIQUE_CONSTRAINT AS positionInUniqueConstraint'))
 			->LeftJoin('information_schema.KEY_COLUMN_USAGE', Clause::On('kcu.COLUMN_NAME','c.COLUMN_NAME'), 'kcu')
 			->LeftJoin('information_schema.KEY_COLUMN_USAGE', Clause::On('kcu2.TABLE_SCHEMA','c.TABLE_NAME')->And('kcu2.COLUMN_NAME', 'c.COLUMN_NAME', Clause::EQUALS, false), 'kcu2')
 			->Where('c.TABLE_SCHEMA', $this->schema)

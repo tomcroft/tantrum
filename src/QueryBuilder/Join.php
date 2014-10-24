@@ -1,9 +1,9 @@
 <?php
 
-namespace tomcroft\tantrum\QueryBuilder;
+namespace tantrum\QueryBuilder;
 
-use tomcroft\tantrum\Core,
-	tomcroft\tantrum\Exception;
+use tantrum\Core,
+	tantrum\Exception;
 
 class Join extends Core\Module
 {
@@ -60,7 +60,7 @@ class Join extends Core\Module
 	
 	public static function Inner($target, ClauseCollection $clauseCollection)
 	{
-		$join = self::newInstance('tomcroft\tantrum\QueryBuilder\Join');
+		$join = self::newInstance('tantrum\QueryBuilder\Join');
 		$join->setTarget($target);
 		$join->setType(self::INNER);
 		$join->setClauseCollection($clauseCollection);
@@ -69,7 +69,7 @@ class Join extends Core\Module
 	
 	public static function Left($target, ClauseCollection $clauseCollection)
 	{
-		$join = self::newInstance('tomcroft\tantrum\QueryBuilder\Join');
+		$join = self::newInstance('tantrum\QueryBuilder\Join');
 		$join->setTarget($target);
 		$join->setType(self::LEFT);
 		$join->setClauseCollection($clauseCollection);

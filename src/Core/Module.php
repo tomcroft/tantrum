@@ -1,6 +1,6 @@
 <?php
 
-namespace tomcroft\tantrum\Core;
+namespace tantrum\Core;
 
 class Module {
 

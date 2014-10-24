@@ -1,8 +1,8 @@
 <?php
 
-namespace tests\lib;
+namespace tantrum\tests;
 
-use tomcroft\tantrum\QueryBuilder;
+use tantrum\QueryBuilder;
 
 class ClauseCollectionTest extends TestCase
 {
@@ -20,7 +20,7 @@ class ClauseCollectionTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\ClauseException
+     * @expectedException \tantrum\Exception\ClauseException
      */
     public function setTypeThrowsClauseException()
     {
@@ -62,7 +62,7 @@ class ClauseCollectionTest extends TestCase
         $clauseCollection = new QueryBuilder\ClauseCollection();
         $clauseCollection->_And($left, $right, $operator, $escaped);
         $clause = $clauseCollection->toArray()[0];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::_AND, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());
@@ -78,7 +78,7 @@ class ClauseCollectionTest extends TestCase
         $clauseCollection = new QueryBuilder\ClauseCollection();
         $clauseCollection->_Or($left, $right, $operator, $escaped);
         $clause = $clauseCollection->toArray()[0];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::_OR, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());
@@ -94,7 +94,7 @@ class ClauseCollectionTest extends TestCase
         $clauseCollection = new QueryBuilder\ClauseCollection();
         $clauseCollection->And($left, $right, $operator, $escaped);
         $clause = $clauseCollection->toArray()[0];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::_AND, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());
@@ -103,7 +103,7 @@ class ClauseCollectionTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\ClauseException
+     * @expectedException \tantrum\Exception\ClauseException
      * @expectedExceptionMessage Method "randomFunctionName" not handled
      */
     public function callThrowsClauseException()
@@ -121,7 +121,7 @@ class ClauseCollectionTest extends TestCase
         $clauseCollection = new QueryBuilder\ClauseCollection();
         $clauseCollection->Or($left, $right, $operator, $escaped);
         $clause = $clauseCollection->toArray()[0];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::_OR, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());

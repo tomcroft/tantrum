@@ -1,14 +1,14 @@
 <?php
 
-namespace tomcroft\tantrum\QueryBuilder;
+namespace tantrum\QueryBuilder;
 
-use tomcroft\tantrum\Exception,
-	tomcroft\tantrum\Core;
+use tantrum\Exception,
+	tantrum\Core;
 
 class ClauseCollection extends Core\Module
 {
 
-	use \tomcroft\tantrum\Traits\Collection;
+	use \tantrum\Traits\Collection;
 
 	protected $type;
 	

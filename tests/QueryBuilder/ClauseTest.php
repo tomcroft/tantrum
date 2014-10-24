@@ -1,8 +1,8 @@
 <?php
 
-namespace tests\lib;
+namespace tantrum\tests;
 
-use tomcroft\tantrum\QueryBuilder;
+use tantrum\QueryBuilder;
 
 class ClauseTest extends TestCase
 {
@@ -21,7 +21,7 @@ class ClauseTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\ClauseException
+     * @expectedException \tantrum\Exception\ClauseException
      */
     public function setArgsThrowsClauseException()
     {
@@ -42,7 +42,7 @@ class ClauseTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\ClauseException
+     * @expectedException \tantrum\Exception\ClauseException
      */
     public function setEscapedThrowsClausException()
     {
@@ -63,16 +63,16 @@ class ClauseTest extends TestCase
 
     /**
      * @test
-     * @covers tomcroft\tantrum\QueryBuilder\Clause::Where
+     * @covers \tantrum\QueryBuilder\Clause::Where
      * @dataProvider staticValidDataProvider
      */
     public function whereSucceeds($left, $right, $operator, $escaped)
     {
         $clauseCollection = QueryBuilder\Clause::Where($left, $right, $operator, $escaped);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\ClauseCollection', get_class($clauseCollection));
+        $this->assertEquals('tantrum\QueryBuilder\ClauseCollection', get_class($clauseCollection));
         $this->assertEquals(QueryBuilder\Clause::WHERE, $clauseCollection->getType());
         $clause = $clauseCollection->toArray()[0];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::WHERE, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());
@@ -81,16 +81,16 @@ class ClauseTest extends TestCase
 
     /**
      * @test
-     * @covers tomcroft\tantrum\QueryBuilder\Clause::On
+     * @covers \tantrum\QueryBuilder\Clause::On
      * @dataProvider staticValidDataProvider
      */
     public function onSucceeds($left, $right, $operator, $escaped)
     {
         $clauseCollection = QueryBuilder\Clause::On($left, $right, $operator, $escaped);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\ClauseCollection', get_class($clauseCollection));
+        $this->assertEquals('tantrum\QueryBuilder\ClauseCollection', get_class($clauseCollection));
         $this->assertEquals(QueryBuilder\Clause::ON, $clauseCollection->getType());
         $clause = $clauseCollection->toArray()[0];
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::ON, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());
@@ -99,13 +99,13 @@ class ClauseTest extends TestCase
     
     /**
      * @test
-     * @covers tomcroft\tantrum\QueryBuilder\Clause::_And
+     * @covers \tantrum\QueryBuilder\Clause::_And
      * @dataProvider staticValidDataProvider
      */
     public function _andSucceeds($left, $right, $operator, $escaped)
     {
         $clause = QueryBuilder\Clause::_And($left, $right, $operator, $escaped);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::_AND, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());
@@ -114,13 +114,13 @@ class ClauseTest extends TestCase
 
     /**
      * @test
-     * @covers tomcroft\tantrum\QueryBuilder\Clause::_Or
+     * @covers \tantrum\QueryBuilder\Clause::_Or
      * @dataProvider staticValidDataProvider
      */
     public function _orSucceeds($left, $right, $operator, $escaped)
     {
         $clause = QueryBuilder\Clause::_Or($left, $right, $operator, $escaped);
-        $this->assertEquals('tomcroft\tantrum\QueryBuilder\Clause', get_class($clause));
+        $this->assertEquals('tantrum\QueryBuilder\Clause', get_class($clause));
         $this->assertEquals(QueryBuilder\Clause::_OR, $clause->getType());
         $this->assertEquals(array($left, $right), $clause->getArgs());
         $this->assertEquals($operator, $clause->getOperator());
@@ -138,7 +138,7 @@ class ClauseTest extends TestCase
 
     /**
      * @test
-     * @expectedException tomcroft\tantrum\Exception\ClauseException
+     * @expectedException \tantrum\Exception\ClauseException
      */
     public function validateTypeThrowsClauseException()
     {
