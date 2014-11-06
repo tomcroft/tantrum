@@ -2,9 +2,10 @@
 
 namespace tantrum\Database;
 
-use tantrum\DatabaseException;
+use tantrum\Exception\DatabaseException,
+	tantrum\Core;
 
-class DatabaseProvider
+class Manager extends Core\Module
 {
 	const KEY_PRIMARY = 'PRI';
 	const KEY_FOREIGN = 'FOREIGN';
@@ -16,29 +17,31 @@ class DatabaseProvider
 	
 	const TYPE_STRING = 'string';
 	const TYPE_INTEGER = 'integer';
-	
-	protected $schema;
-	protected $connection;
+
+	protected static $connection;
 	protected $statement;
 	protected $primaryKey;
 	protected $fields = array();
 	protected $joins = array();
 	protected $data = array();
-
-	public function __construct($driver, $schema)
-	{
-		$this->schema = $schema;
-		$dataSourceName = $driver.':host='.$GLOBALS['objConfig']->arrDatabase['strHost'].';dbname='.$schema;
-		$options = array(
-			\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
-		); 
-		$this->connection = new \PDO($dataSourceName, $GLOBALS['objConfig']->arrDatabase['strUserName'], $GLOBALS['objConfig']->arrDatabase['strPassword'], $options);
-	}
 	
 	public static function Get($schema)
 	{
-		$className = __NAMESPACE__.'\\'.$GLOBALS['objConfig']->arrDatabase['strDriver'].'DB';
-		return new $className($schema);
+		$driver = self::getConfigOption('databaseDriver');
+		$dataSourceName = $driver.':host='.self::getConfigOption('databaseHost').';dbname='.$schema;
+		$options = array(
+			\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+		); 
+		try {
+			self::$connection = new \PDO($dataSourceName, self::getConfigOption('databaseUser'), self::getConfigOption('databasePassword'), $options);
+		} catch(\PDOException $e) {
+			self::rethrow($e);
+		}
+
+		$className = 'tantrum\\'.strtolower($driver);
+		$adaptor = $this->newInstance($className());
+		$adaptor->setConnection($this->connection);
+
 	}
 	
 	public function Query(Query $query)
@@ -128,5 +131,15 @@ class DatabaseProvider
 		if($errors[0] > 0) {
 			throw new DatabaseException($errors[2].":\r\n".$queryString);
 		}
+	}
+
+	protected function reThrow(\PDOException $e)
+	{
+		switch($e->getCode()) {
+			case 2002:
+				$ex = new DatabaseException('Could not connect to database.');
+			break;
+		}
+		throw $ex;
 	}
 }

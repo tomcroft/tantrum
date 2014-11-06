@@ -4,8 +4,58 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "04a4cb779c24e5ca9ea9a15a5709e3f8",
-    "packages": [],
+    "hash": "7648c08baa3f1be39aeafb2edc4fb7d9",
+    "packages": [
+        {
+            "name": "tomcroft/tantrum-mysql",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tomcroft/tantrum-mysql.git",
+                "reference": "dfbe7eebecc381ea28c3b65430c55e62119719c8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tomcroft/tantrum-mysql/zipball/dfbe7eebecc381ea28c3b65430c55e62119719c8",
+                "reference": "dfbe7eebecc381ea28c3b65430c55e62119719c8",
+                "shasum": ""
+            },
+            "require-dev": {
+                "mockery/mockery": "0.9.1",
+                "phpunit/phpunit": "4.3.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "tantrum-mysql\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "tantrum-mysql\\tests\\": "tests/"
+                }
+            },
+            "license": [
+                "GPL-3.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Tom Croft",
+                    "email": "tom@dev-ops.co.uk",
+                    "role": "developer"
+                }
+            ],
+            "description": "Mysql Adaptor for tantrum ORM",
+            "keywords": [
+                "database, php, mysql, ORM"
+            ],
+            "support": {
+                "source": "https://github.com/tomcroft/tantrum-mysql/tree/master",
+                "issues": "https://github.com/tomcroft/tantrum-mysql/issues"
+            },
+            "time": "2014-10-28 08:12:43"
+        }
+    ],
     "packages-dev": [
         {
             "name": "doctrine/instantiator",
@@ -819,7 +869,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "tomcroft/tantrum-mysql": 20
+    },
     "prefer-stable": false,
     "platform": [],
     "platform-dev": []
