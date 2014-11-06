@@ -3,32 +3,49 @@
 namespace tantrum\Entity;
 
 use tantrum\Core,
-	tantrum\Exception;
+	tantrum\Database,
+	tantrum\Exception,
+	tantrum\QueryBuilder;
 
 class Entity extends Core\Module 
 {
-
+	private   $initialised = false;
 	protected $dB;
 	protected $columns = array();
 	protected $objects = array();
 	protected $handle;
+	protected $schema;
+	protected $table;
 	protected $primary;
 	
 	private $autoSet;
-	
-	public function __construct($handle)
+
+	public static function get($handle)
 	{
-		$this->handle = $handle;
-		list($schema, $table) = explode('.', $handle);
-		$this->dB = $GLOBALS['objConfig']->DB($schema);	
-		$this->GetColumnDefinitions();
+		$entity = self::newInstance('tantrum\Entity\Entity');
+
+		$entity->setHandle($handle);
+		return $entity;
+	}
+	
+	public function setHandle($handle)
+	{
+		$this->validateHandle($handle);
+		list($this->table, $this->schema) = explode('.', $handle);
+		$this->handle = $handle;                                                        
+	}
+
+	public function getHandle()
+	{
+		return $this->handle;
 	}
 	
 	public function __set($key, $value)
 	{
-		$key = $this->dB->MapColumnName($key); //TODO: Make this a listener
+		$this->init();
+		$key = $this->callListener('mapColumnName', $key);
 		if(!array_key_exists($key, $this->columns)) {
-			throw new EntityException($key.' does not exist on this entity: '.print_r($value, 1), E_USER_NOTICE);
+			throw new Exception\EntityException($key.' does not exist on this entity: '.print_r($value, 1), E_USER_NOTICE);
 		} else {
 			$this->columns[$key]->setValue($value);
 		}
@@ -36,130 +53,146 @@ class Entity extends Core\Module
 	
 	public function __get($key)
 	{
-		$key = $this->dB->MapColumnName($key); //TODO: Make this a listener
+		$this->init();
+		$key = $this->callListener('mapColumnName', $key);
 		if(!array_key_exists($key, $this->columns)) {
-			throw new EntityException('Variable '.$key.' does not exist on this entity.', E_USER_NOTICE);
+			throw new Exception\EntityException('Variable '.$key.' does not exist on this entity.', E_USER_NOTICE);
 		}
-		return $this->arrColumns[$key]->GetValue();
+		return $this->columns[$key]->GetValue();
 	}
 	
 	public function __call($key, $filter = array())
 	{
-		if(is_callable($this->objects[$key])) {
-			return call_user_func_array($this->objects[$key], array($this->columns[$key]->GetColumnName(), $this->columns[$key]->GetValue()));
+		$this->init();
+		if(array_key_exists($key, $this->objects) && is_callable($this->objects[$key])) {
+			return call_user_func_array($this->objects[$key], array($this->columns[$key]->getColumnName(), $this->columns[$key]->getValue()));
 		} else {
-			throw new EntityException('Function '.$key.' does not exist on this entity.', E_USER_NOTICE);
+			throw new Exception\EntityException('Function '.$key.' does not exist on this entity.', E_USER_NOTICE);
 		}
 	}
 
-	public function Save()
+	public function save()
 	{
-		if($this->IsModified()) {
-			if(!is_numeric($this->primary->GetValue())) {
-				return $this->Create();
+		$this->init();
+		if($this->isModified()) {
+			$primaryKey = $this->primary->getValue();	
+			if(empty($primaryKey)) {
+				return $this->create();
 			} else {
-				return $this->Update();
+				return $this->update();
 			}
 		}
 		return false;
 	}
 	
-	protected function Create()
+	protected function create()
 	{
-		$query = Query::Insert($this->handle, null,
-			$this->GetFieldObject());
-		$this->dB->Query($query);
-		$this->objPrimary->SetValue($this->objDB->GetInsertId());
-		$this->ResetModified();
+		$this->init();
+		$query = QueryBuilder\Query::Insert($this->handle, $this->getFieldObject());
+		$this->dB->query($query);
+		// TODO: This should be settable from outside
+		$this->primary->setValue($this->dB->getInsertId());
+		$this->resetModified();
 		
-		$this->Cache();
 		return true;
 	}
 	
-	protected function Update()
+	protected function update()
 	{
-		$query = Query::Update($this->handle, null,
-			$this->GetFieldObject())
-			->Where($this->primary->getColumnName(), $this->primary->GetValue());
-		$this->objDB->Query($query);
-		$this->ResetModified();
-		$this->Cache();
+		$this->init();
+		$query = QueryBuilder\Query::Update($this->handle, $this->GetFieldObject())
+			->Where($this->primary->getColumnName(), $this->primary->getValue());
+		$this->dB->query($query);
+		$this->resetModified();
+		
 		return true;
 	}
 	
-	public function LoadByKey($key, $value)
+	public function loadByKey($key, $value)
 	{
-		//Could GetFromCache use a subclassed pdo object????one!one!
+		$this->init();
 		$this->autoSet = true;
-		$query = Query::Select($this->handle, NULL, $this->GetFieldObject())
+		$query = QueryBuilder\Query::Select($this->handle, NULL, $this->getFieldObject())
 			->Where($key, $value);
-		$this->dB->Query($query);
-		foreach($this->dB->Fetch() as $key => $value) {
+		$this->dB->query($query);
+		foreach($this->dB->fetch() as $key => $value) {
 			$this->$key = $value;
 		}
-		
+		return true;
 	}
 	
-	public function IsModified()
+	public function isModified()
 	{
+		$this->init();
 		foreach($this->columns as $columnName => $column) {
-			if($column->IsModified() === true) {
+			if($column->isModified() === true) {
 				return true;
 			}
 		}
 		return false;
 	}
 	
-	protected function GetColumnDefinitions()
+	protected function getColumnDefinitions()
 	{
-		$key = __CLASS__.'::ColumnDefinitions.'.$this->handle;
-		$columns = $GLOBALS['objConfig']->Cache->Get($key);
-		list($schema, $table) = explode('.', $this->handle);
-		if(!$columns) {
-			$columns = $this->dB->GetColumnDefinitions($table);
-			$GLOBALS['objConfig']->Cache->Set($key, $columns);
+		$key = __CLASS__.'::ColumnDefinitions('.$this->handle.')';
+		$columns = $this->getFromCache($key);
+		if(is_null($columns)) {
+			$columns = $this->dB->getColumnDefinitions($this->table);
+			$this->setInCache($key, $columns);
 		}
 		
 		foreach($columns as $column) {
 
-			$this->columns[$this->dB->MapColumnName($column->GetColumnName())] = $column;
+			$this->columns[$key = $this->callListener('mapColumnName', $column->getColumnName())] = $column;
 
-			if(!is_null($column->GetJoinSchema())) {
-				$this->objects[$this->dB->MapColumnName($column->GetColumnName())] = function($key, $value) {
-					$entity = new Entity($this->columns[$key]->GetJoinSchema());
-					$entity->LoadByKey($this->columns[$key]->GetJoinOn(), $value);
+			if(!is_null($column->getJoinSchema())) {
+				$this->objects[$this->callListener('mapColumnName', $column->getColumnName())] = function($key, $value) {
+					$entity = Entity::get($this->columns[$key]->getJoinSchema());
+					$entity->loadByKey($this->columns[$key]->getJoinOn(), $value);
 					return $entity;
 				};
 			}
 
-			if($column->IsPrimary()) {
+			if($column->isPrimary()) {
 				$this->primary = $column;
 			}
 		}
 	}
 	
-	protected function GetFieldObject()
+	protected function getFieldObject()
 	{
-		$fieldCollection = new Fields();
+		$this->init();
+		$fieldCollection = new QueryBuilder\Fields();
 		foreach($this->columns as $key => $field) {
-			$columnName = $field->GetColumnName();
-			$fieldCollection->$columnName = $field->GetValue();
+			$columnName = $field->getColumnName();
+			$fieldCollection->$columnName = $field->getValue();
 		}
 		return $fieldCollection;
 	}
 	
-	protected function ResetModified()
+	protected function resetModified()
 	{
+		$this->init();
 		foreach($this->columns as $field) {
-			$field->SetModified(false);
+			$field->setModified(false);
 		}
 	}
-	
-	protected function Cache()
+
+	protected function validateHandle($handle)
 	{
-		$cache = array();
-		foreach($this->columns as $key => $field) {
-			$cache[$key] = $field->GetValue();
+		if(!is_string($handle) || count(explode('.', $handle)) !== 2) {
+			throw new Exception\EntityException('Handle must be a dot separated string'); 
 		}
+		return true;
+	}
+
+	protected function init()
+	{
+		if($this->initialised === false) {
+			$manager = $this->newInstance('tantrum\Database\Manager');
+			$this->dB = $manager::get($this->schema);
+			$this->getColumnDefinitions();
+			$this->initialised = true;
+		}	
 	}
 }

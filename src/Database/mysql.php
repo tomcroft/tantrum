@@ -2,12 +2,12 @@
 
 namespace tantrum\Database;
 
-class MySQLDB extends DatabaseProvider implements DatabaseAdaptorInterface
+class mysql extends Database\Manager implements DatabaseAdaptorInterface
 {
 	protected $schema;
 	protected $nonEscapedStrings = array('NOW()', null);
 
- 	public function __construct($schema = 'dbApplications')
+ 	public function __construct($schema = 'information_schema')
 	{
 		parent::__construct('mysql', $schema);
 	}
