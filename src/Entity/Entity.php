@@ -31,7 +31,7 @@ class Entity extends Core\Module
 	public function setHandle($handle)
 	{
 		$this->validateHandle($handle);
-		list($this->table, $this->schema) = explode('.', $handle);
+		list($this->schema, $this->table) = explode('.', $handle);
 		$this->handle = $handle;                                                        
 	}
 
@@ -137,7 +137,7 @@ class Entity extends Core\Module
 		$key = __CLASS__.'::ColumnDefinitions('.$this->handle.')';
 		$columns = $this->getFromCache($key);
 		if(is_null($columns)) {
-			$columns = $this->dB->getColumnDefinitions($this->table);
+			$columns = $this->dB->getColumnDefinitions($this->schema, $this->table);
 			$this->setInCache($key, $columns);
 		}
 		

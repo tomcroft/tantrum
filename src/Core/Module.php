@@ -51,7 +51,9 @@ class Module {
 
     protected static function newInstance($class)
     {
-        return self::getContainer()->newInstance($class);
+        $args = func_get_args();
+        unset($args[0]);
+        return self::getContainer()->newInstance($class, $args);
     }
 
     public static function callListener($name)
@@ -64,8 +66,7 @@ class Module {
 
     public static function getConfigOption($name)
     {
-        $config = self::$config;
-        var_dump($config);
+        $config = self::getConfig();
         return $config::get($name);
     }
 

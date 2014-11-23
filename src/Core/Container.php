@@ -19,23 +19,17 @@ class Container
         return self::$self;
     }
 
-    public static function newInstance($class)
+    public static function newInstance($class, $args)
     {
         if(array_key_exists($class, self::$injectedModules)) {
             return self::$injectedModules[$class];
         }
-        return new $class;
+        $reflection_class = new \ReflectionClass($class);
+        return $reflection_class->newInstanceArgs($args);
     }
 
     public static function injectInstance($key, $object)
     {
-        $backtrace = debug_backtrace();
-        $caller = $backtrace[count($backtrace)-1];
-
-        /*if($caller['class'] !== 'PHPUnit_TextUI_Command')
-        {
-            throw new \Exception('Don\'t inject objects into the container unless you\'re testing!');
-        }*/
         if(!array_key_exists($key, self::$injectedModules)) {
             self::$injectedModules[$key] = $object;
             return $object;

@@ -9,9 +9,7 @@ class ListenerCollection
     private static $listeners = array();
     private static $self = null;
 
-    protected final function __construct(){
-        $this->addDefaultListeners();
-    }
+    protected final function __construct(){}
 
     /**
      * Create a singleton instance
@@ -20,7 +18,10 @@ class ListenerCollection
     public static function init()
     {
         if (null === self::$self) {
-            self::$self = new ListenerCollection();
+            $self = self::$self = new ListenerCollection();
+            foreach(self::getDefaultListeners() as $key => $listener) {
+                $self::addListener($key, $listener);
+            }
         }
         return self::$self;
     }
@@ -30,10 +31,10 @@ class ListenerCollection
      * @param string   $name
      * @param callable $callback
      */
-    public static function addListener($name, Callable $callback)
+    public static function addListener($name, $callback)
     {
         if(!is_callable($callback)) {
-            throw new \Exception('Listener '.$name.' is not a valid callback');
+            throw new Exception\Exception('Listener '.$name.' is not a valid callback');
         }
         self::$listeners[$name] = $callback;
     }
@@ -51,8 +52,10 @@ class ListenerCollection
         return call_user_func_array(self::$listeners[$name], $args);
     }
 
-    private static function addDefaultListeners()
+    private static function getDefaultListeners()
     {
-        self::addListener('mapColumnName', function($key){return $key;});
+        return array(
+            'mapColumnName' => function($key){return $key;},
+        );
     }
 }

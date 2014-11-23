@@ -2,6 +2,8 @@
 
 namespace tantrum\Core;
 
+use tantrum\Exception;
+
 class Config
 {
     private static $self = null;
@@ -39,7 +41,7 @@ class Config
     public static function get($key)
     {
         if(!array_key_exists($key, self::$configs)) {
-            throw new \Exception($key.' is not a valid config option');
+            throw new Exception\Exception($key.' is not a valid config option');
         }
         return self::$configs[$key];
     }
@@ -48,7 +50,7 @@ class Config
     {
         foreach(self::$keys as $key) {
             if(!array_key_exists($key, $configs)) {
-                throw new \Exception($key.' is a required config option');
+                throw new Exception\Exception($key.' is a required config option');
             }
         }
         return true;

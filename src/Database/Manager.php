@@ -2,7 +2,8 @@
 
 namespace tantrum\Database;
 
-use tantrum\Exception\DatabaseException,
+use tantrum\Exception,
+	tantrum\QueryBuilder,
 	tantrum\Core;
 
 class Manager extends Core\Module
@@ -19,125 +20,137 @@ class Manager extends Core\Module
 	const TYPE_INTEGER = 'integer';
 
 	protected static $connection;
+	public static $adaptor;
+
 	protected $statement;
 	protected $primaryKey;
 	protected $fields = array();
 	protected $joins = array();
 	protected $data = array();
 	
-	public static function Get($schema)
+	public static function get($schema)
 	{
-		$driver = self::getConfigOption('databaseDriver');
+		$driver = strtolower(self::getConfigOption('databaseDriver'));
 		$dataSourceName = $driver.':host='.self::getConfigOption('databaseHost').';dbname='.$schema;
 		$options = array(
 			\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
 		); 
 		try {
-			self::$connection = new \PDO($dataSourceName, self::getConfigOption('databaseUser'), self::getConfigOption('databasePassword'), $options);
+			self::$connection = self::newInstance('PDO', $dataSourceName, self::getConfigOption('databaseUser'), self::getConfigOption('databasePassword'), $options);
 		} catch(\PDOException $e) {
-			self::rethrow($e);
+			self::parseException($e);
 		}
 
-		$className = 'tantrum\\'.strtolower($driver);
-		$adaptor = $this->newInstance($className());
-		$adaptor->setConnection($this->connection);
+		$className = sprintf('tantrum_%s_adaptor', $driver);
+		self::$adaptor = self::newInstance($className);
+		return self::newInstance(__CLASS__);
+	}
 
+	public function getColumnDefinitions($schema, $table)
+	{
+		$query = self::$adaptor->getColumnDefinitions($schema, $table);
+		$this->query($query);
+		$fields = $this->fetchAll('tantrum\QueryBuilder\Field');
+		return $fields;
 	}
 	
-	public function Query(Query $query)
+	public function query(QueryBuilder\Query $query)
 	{
+		$adaptor = self::$adaptor;
 		switch ($query->getType()) {
-			case Query::SELECT: 
-				$query = $this->FormatSelect($query);
-				$parameters = $query->GetParameters();
+			case QueryBuilder\Query::SELECT: 
+				$queryString = $adaptor::formatSelect($query);
+				$parameters = $query->getParameters();
 				break;
-			case Query::INSERT:
-				$queryString = $this->FormatInsert($query);
-				$parameters = array_values($query->getFields()->ToArray());
-				$parameters = !is_null($query->GetDuplicateFieldsForUpdate())
-					? array_merge($parameters, array_values($query->GetDuplicateFieldsForUpdate()->ToArray()))
+			case QueryBuilder\Query::INSERT:
+				$queryString = $adaptor::formatInsert($query);
+				$parameters = array_values($query->getFields()->toArray());
+				$parameters = !is_null($query->getDuplicateFieldsForUpdate())
+					? array_merge($parameters, array_values($query->getDuplicateFieldsForUpdate()->toArray()))
 					: $parameters;
 				break;
-			case Query::DELETE:
-				$queryString = $this->FormatDelete($query);
-				$parameters = $query->GetParameters();
+			case QueryBuilder\Query::DELETE:
+				$queryString = $adaptor::formatDelete($query);
+				$parameters = $query->getParameters();
 				break;
-			case Query::UPDATE:
-				$query = $this->FormatUpdate($query);
-				$parameters = array_merge(array_values($query->getFields()->ToArray()),$query->GetParameters());
-				break;			
+			case QueryBuilder\Query::UPDATE:
+				$queryString = $adaptor::formatUpdate($query);
+				$parameters = array_merge(array_values($query->getFields()->toArray()), $query->getParameters());
+				break;
 			default:
-				throw new DatabaseException('Query Type Not Handled');
-				break;
+				throw new Exception\DatabaseException('Query Type Not Handled');
 		} try {
-			$this->connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false); 
-			if($this->statement = $this->connection->prepare($queryString)) {
+			self::$connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false); 
+			if($this->statement = self::$connection->prepare($queryString)) {
 				$this->statement->execute($parameters);
-				return $this->CheckErrors($this->statement, $queryString);
+				return $this->checkErrors($this->statement, $queryString);
 			} else {
 				//$this->connection->debugDumpParams();
-				throw new DatabaseException("Prepare statement failed:\r\n".print_r($this->connection->errorInfo(), 1)."\r\n".$queryString);
+				throw new Exception\DatabaseException("Prepare statement failed:\r\n".print_r(self::$connection->errorInfo(), 1)."\r\n".$queryString);
 			}
-		} catch(PDOException $e) {
-			throw new DatabaseException($e->getMessage());
+		} catch(\PDOException $e) {
+			throw new Exception\DatabaseException($e->getMessage());
 		}
 	}
 	
-	public function GetInsertId()
+	public function getInsertId()
 	{
-		return $this->connection->lastInsertId(); 
+		return self::$connection->lastInsertId(); 
 	}
 	
-	public function GetAffectedRows()
+	public function getAffectedRows()
 	{
 		return $this->statement->rowCount();
 	}
 	
-	protected function GetConnection(){
-		if(isset($this->connection)){
-			return $this->connection;
-		} else {
-			$connection = $this->connection = $this->Connect();
-		}
-		return $connection;
-	}
-	
-	public function Fetch($className=null, $constructorArgs=array())
+	public function fetch($className=null, $constructorArgs=array())
 	{
-		if(!is_null($className))
+		if(!empty($className))
 		{
 			$this->statement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $className, $constructorArgs);
 		} else {
+			if(count($constructorArgs) > 0) {
+				throw new Exception\DatabaseException('Constructor arguments passed without a class name');
+			}
 			$this->statement->setFetchMode(\PDO::FETCH_ASSOC);
 		}
 		return $this->statement->fetch();
 		
 	}
 	
-	public function FetchAll($className=null, $constructorArgs=array())
+	public function fetchAll($className=null, $constructorArgs=array())
 	{
-		if(!is_null($className))
+		if(!empty($className))
 		{
 			$this->statement->setFetchMode(\PDO::FETCH_CLASS|\PDO::FETCH_PROPS_LATE, $className, $constructorArgs);
 		} else {
+			if(count($constructorArgs) > 0) {
+				throw new Exception\DatabaseException('Constructor arguments passed without a class name');
+			}
 			$this->statement->setFetchMode(\PDO::FETCH_ASSOC);
 		}
 		return $this->statement->fetchAll();
 	}
 	
-	protected function CheckErrors($pdo, $queryString)
+	protected function checkErrors($pdo, $queryString)
 	{
 		$errors = $pdo->errorInfo();
 		if($errors[0] > 0) {
-			throw new DatabaseException($errors[2].":\r\n".$queryString);
+			throw new Exception\DatabaseException($errors[2].":\r\n".$queryString);
 		}
+
+		return true;
 	}
 
-	protected function reThrow(\PDOException $e)
+	protected function parseException(\PDOException $e)
 	{
+		// TODO: These are probably adaptor specific error codes
 		switch($e->getCode()) {
+			case 1049:
 			case 2002:
-				$ex = new DatabaseException('Could not connect to database.');
+				$ex = new Exception\DatabaseException($e->getMessage());
+			default:
+				$ex = new Exception\DatabaseException('An unhandled database error has occurred: '.$e->getMessage());
 			break;
 		}
 		throw $ex;
