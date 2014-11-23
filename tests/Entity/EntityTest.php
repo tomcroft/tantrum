@@ -69,6 +69,7 @@ class EntityTest extends TestCase
         $this->mod->oldFirstName = 'newFirstName';
     }
 
+
     /**
      * @test
      * @expectedException tantrum\Exception\EntityException
@@ -114,12 +115,12 @@ class EntityTest extends TestCase
      */
     public function saveCallsCreate()
     {
+        $query = $this->mockStatic('tantrum\QueryBuilder\Query');
         $userId = uniqid();
         $this->injectMocks(false);
-        $query = $this->mockStatic('tantrum\QueryBuilder\Query');
         $query->shouldReceive('Insert')->once()
             ->andReturn(true);
-        $db = $this->mock('tantrum\mysql\mysql');
+        $db = $this->mock('tantrum_mysql_adaptor');
         $db->shouldReceive('query')->once()
             ->andReturn(true);
         $db->shouldReceive('getInsertId')->once()
@@ -137,14 +138,14 @@ class EntityTest extends TestCase
      */
     public function saveCallsUpdate()
     {
-        $this->injectMocks(true);
         $query = $this->mockStatic('tantrum\QueryBuilder\Query');
+        $this->injectMocks(true);
         $query->shouldReceive('Update')->once()
             ->andReturn($query);
         $query->shouldReceive('Where')->once()
             ->with('userId', 'userId')
             ->andReturn($query);
-        $db = $this->mock('tantrum\mysql\mysql');
+        $db = $this->mock('tantrum_mysql_adaptor');
         $db->shouldReceive('query')->once()
             ->andReturn(true);
         $this->mod->firstName = 'newFirstName';
@@ -160,14 +161,14 @@ class EntityTest extends TestCase
      */
     public function loadByKeySucceeds()
     {
-        $this->injectMocks(true);
         $query = $this->mockStatic('tantrum\QueryBuilder\Query');
+        $this->injectMocks(true);
         $query->shouldReceive('Select')->once()
             ->andReturn($query);
         $query->shouldReceive('Where')->once()
             ->with('userId', 'userId')
             ->andReturn($query);
-        $db = $this->mock('tantrum\mysql\mysql');
+        $db = $this->mock('tantrum_mysql_adaptor');
         $db->shouldReceive('query')->once()
             ->andReturn(true);
         $db->shouldReceive('fetch')->once()
@@ -244,7 +245,7 @@ class EntityTest extends TestCase
     {
         $this->database = 'main'; 
         $this->table = 'user';
-        $this->schema = sprintf('%s.%s', $this->table, $this->database);
+        $this->schema = sprintf('%s.%s', $this->database, $this->table);
 
         $this->mod->setHandle($this->schema);
 
@@ -256,9 +257,9 @@ class EntityTest extends TestCase
             $this->createFieldObject('addressId', null, 'addressId', 'main', 'address', 'addressId'),
         );
 
-        $db = $this->mock('tantrum\mysql\mysql');
+        $db = $this->mock('tantrum_mysql_adaptor');
         $db->shouldReceive('getColumnDefinitions')->once()
-            ->with($this->table)
+            ->with($this->database, $this->table)
             ->andReturn($this->columns);
  
         $manager = $this->mockStatic('tantrum\Database\Manager');

@@ -5,13 +5,13 @@ namespace tantrum\Database;
 interface DatabaseAdaptorInterface
 {   
     
-    function FormatSelect(Query $query);
+    function formatSelect(Query $query);
     
-    function FormatInsert(Query $query);
+    function formatInsert(Query $query);
     
-    function FormatUpdate(Query $query);
+    function formatUpdate(Query $query);
     
-    function FormatDelete(Query $query);
+    function formatDelete(Query $query);
     
-    function GetColumnDefinitions($table);
+    function getColumnDefinitions($table);
 }
