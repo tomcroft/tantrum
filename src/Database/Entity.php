@@ -1,43 +1,30 @@
 <?php
 
-namespace tantrum\Entity;
+namespace tantrum\Database;
 
 use tantrum\Core,
-	tantrum\Database,
 	tantrum\Exception,
 	tantrum\QueryBuilder;
 
 class Entity extends Core\Module 
 {
 	private   $initialised = false;
-	protected $dB;
+	protected $connection;
 	protected $columns = array();
 	protected $objects = array();
-	protected $handle;
-	protected $schema;
 	protected $table;
 	protected $primary;
 	
 	private $autoSet;
-
-	public static function get($handle)
-	{
-		$entity = self::newInstance('tantrum\Entity\Entity');
-
-		$entity->setHandle($handle);
-		return $entity;
-	}
 	
-	public function setHandle($handle)
+	public function setTable($table)
 	{
-		$this->validateHandle($handle);
-		list($this->schema, $this->table) = explode('.', $handle);
-		$this->handle = $handle;                                                        
+		$this->table = $table;
 	}
 
-	public function getHandle()
+	public function setConnection(Connection $connection)
 	{
-		return $this->handle;
+		$this->connection = $connection;
 	}
 	
 	public function __set($key, $value)
@@ -88,10 +75,10 @@ class Entity extends Core\Module
 	protected function create()
 	{
 		$this->init();
-		$query = QueryBuilder\Query::Insert($this->handle, $this->getFieldObject());
-		$this->dB->query($query);
+		$query = QueryBuilder\Query::Insert($this->getHandle(), $this->getFieldObject());
+		$this->connection->query($query);
 		// TODO: This should be settable from outside
-		$this->primary->setValue($this->dB->getInsertId());
+		$this->primary->setValue($this->connection->getInsertId());
 		$this->resetModified();
 		
 		return true;
@@ -100,9 +87,9 @@ class Entity extends Core\Module
 	protected function update()
 	{
 		$this->init();
-		$query = QueryBuilder\Query::Update($this->handle, $this->GetFieldObject())
+		$query = QueryBuilder\Query::Update($this->getHandle(), $this->GetFieldObject())
 			->Where($this->primary->getColumnName(), $this->primary->getValue());
-		$this->dB->query($query);
+		$this->connection->query($query);
 		$this->resetModified();
 		
 		return true;
@@ -112,10 +99,10 @@ class Entity extends Core\Module
 	{
 		$this->init();
 		$this->autoSet = true;
-		$query = QueryBuilder\Query::Select($this->handle, NULL, $this->getFieldObject())
+		$query = QueryBuilder\Query::Select($this->getHandle(), NULL, $this->getFieldObject())
 			->Where($key, $value);
-		$this->dB->query($query);
-		foreach($this->dB->fetch() as $key => $value) {
+		$this->connection->query($query);
+		foreach($this->connection->fetch() as $key => $value) {
 			$this->$key = $value;
 		}
 		return true;
@@ -134,10 +121,11 @@ class Entity extends Core\Module
 	
 	protected function getColumnDefinitions()
 	{
-		$key = __CLASS__.'::ColumnDefinitions('.$this->handle.')';
+		$key = __CLASS__.'::ColumnDefinitions('.$this->getHandle().')';
 		$columns = $this->getFromCache($key);
+
 		if(is_null($columns)) {
-			$columns = $this->dB->getColumnDefinitions($this->schema, $this->table);
+			$columns = $this->connection->getColumnDefinitions($this->table);
 			$this->setInCache($key, $columns);
 		}
 		
@@ -178,21 +166,16 @@ class Entity extends Core\Module
 		}
 	}
 
-	protected function validateHandle($handle)
-	{
-		if(!is_string($handle) || count(explode('.', $handle)) !== 2) {
-			throw new Exception\EntityException('Handle must be a dot separated string'); 
-		}
-		return true;
-	}
-
 	protected function init()
 	{
 		if($this->initialised === false) {
-			$manager = $this->newInstance('tantrum\Database\Manager');
-			$this->dB = $manager::get($this->schema);
-			$this->getColumnDefinitions();
+			$this->getColumnDefinitions($this->table);
 			$this->initialised = true;
 		}	
+	}
+
+	protected function getHandle()
+	{
+		return sprintf('%s.%s', $this->connection->getSchema(), $this->table);
 	}
 }

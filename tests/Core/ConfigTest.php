@@ -20,32 +20,24 @@ class ConfigTest extends TestCase
     public function setSucceeds()
     {
         $configOptions = array(
-            'databaseDriver'   => uniqid(),
-            'databaseHost'     => uniqid(),
-            'defaultSchema'    => uniqid(),
-            'databaseUser'     => uniqid(),
-            'databasePassword' => uniqid(),
+            'host'     => uniqid(),
+            'schema'   => uniqid(),
+            'user'     => uniqid(),
+            'password' => uniqid() 
         );
-
         $config = Core\Config::init();
-        $config::set($configOptions);
-
-        foreach($configOptions as $key => $value) {
-            $this->assertSame($value, $config::get($key));
-        }
+        $config::setDatabase('mysql', $configOptions['host'], $configOptions['schema'], $configOptions['user'], $configOptions['password'], true);
+        $this->assertEquals($configOptions, $config::getDatabase('mysql'));
     }
 
     /**
      * @test
-     * @expectedException tantrum\Exception\Exception 
+     * @expectedException tantrum\Exception\DatabaseException 
      */
     public function setThrowsException()
     {
-        $configOptions = array(
-            uniqid() => uniqid(),
-        );
         $config = Core\Config::init();
-        $config::set($configOptions);
+        $config::setDatabase(uniqid(), uniqid(), uniqid(), uniqid(), uniqid());
     }
 
     /**
@@ -54,17 +46,7 @@ class ConfigTest extends TestCase
      */
     public function getThrowsException()
     {
-        $configOptions = array(
-            'databaseDriver'   => uniqid(),
-            'databaseHost'     => uniqid(),
-            'defaultSchema'    => uniqid(),
-            'databaseUser'     => uniqid(),
-            'databasePassword' => uniqid(),
-        );
-
         $config = Core\Config::init();
-        $config::set($configOptions);
-
-        $config::get(uniqid());
+        $config::getDatabase(uniqid());
     }
 }

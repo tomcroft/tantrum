@@ -12,10 +12,10 @@ class Cache
 
     public static function init()
     {
-        if(is_null(self::$self)) {
-            self::$self = new Cache();
+        if(is_null(static::$self)) {
+            static::$self = new Cache();
         }
-        return self::$self;
+        return static::$self;
     }
 
     public static function set($key, $value)
@@ -35,6 +35,6 @@ class Cache
 
     public static function flush()
     {
-        self::$cachedValues = array();
+        self::$self = null;
     }
 }

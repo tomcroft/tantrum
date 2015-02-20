@@ -2,27 +2,21 @@
 
 namespace tantrum\Core;
 
-use tantrum\Exception;
+use tantrum\Database,
+    tantrum\Exception;
 
 class Config
 {
     private static $self = null;
-    private static $configs = array();
-
-    //TODO: support replication / root access here
-    private static $keys = array(
-        'databaseDriver',
-        'databaseHost',
-        'defaultSchema',
-        'databaseUser',
-        'databasePassword',
+    private static $configs = array(
+        'databases' => array()
     );
 
     protected final function __construct(){}
 
     /**
      * Create a singleton instance
-     * @return tantrum\Core\ListenerCollection
+     * @return tantrum\Core\Config
      */
     public static function init()
     {
@@ -32,27 +26,25 @@ class Config
         return self::$self;
     }
 
-    public static function set(array $configs)
+    public static function setDatabase($driver, $host, $schema, $user, $password, $isMaster = true)
     {
-        self::validateConfigOptions($configs);
-        self::$configs = $configs;
+        Database\Manager::isSupported($driver);
+        $key = sprintf('%s-%s', $driver, $isMaster);
+        self::$configs['databases'][$key] = array(
+            'host'     => $host,
+            'schema'   => $schema,
+            'user'     => $user,
+            'password' => $password,
+        );
     }
 
-    public static function get($key)
+    public static function getDatabase($driver, $getMaster = true)
     {
-        if(!array_key_exists($key, self::$configs)) {
-            throw new Exception\Exception($key.' is not a valid config option');
+        $key = sprintf('%s-%s', $driver, $getMaster);
+        if(!array_key_exists($key, self::$configs['databases'])) {
+            throw new Exception\Exception($driver.' does not have any config settings');
         }
-        return self::$configs[$key];
-    }
 
-    protected static function validateConfigOptions($configs)
-    {
-        foreach(self::$keys as $key) {
-            if(!array_key_exists($key, $configs)) {
-                throw new Exception\Exception($key.' is a required config option');
-            }
-        }
-        return true;
+        return self::$configs['databases'][$key];
     }
 }

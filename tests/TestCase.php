@@ -32,15 +32,14 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $configOptions = array(
-            'databaseDriver'   => 'mysql',
-            'databaseHost'     => 'localhost',
-            'defaultSchema'    => 'information_schema',
-            'databaseUser'     => 'databaseUser',
-            'databasePassword' => 'databasePassword',
-        );
+        $host     = 'localhost';
+        $schema   = 'information_schema';
+        $user     = 'root';
+        $password = '';
+
         $config = \tantrum\Core\Config::init();
-        $config->set($configOptions);
+        $config->setDatabase('mysql', $host, $schema, $user, $password);
+
         $this->container = Core\Container::init();
     }
 

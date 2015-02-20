@@ -26,6 +26,16 @@ class CacheTest extends TestCase
         $this->assertSame($value, $cache::get($key));
     }
 
+    /**
+     * @test
+     */
+    public function getReturnsNull()
+    {
+        $key = uniqid();
+        $cache = Core\Cache::init();
+        $this->assertNull($cache::get($key));
+    }
+
 
     // Data Providers
     
@@ -41,12 +51,6 @@ class CacheTest extends TestCase
     }
 
     // Utils
-
-    public function setUp()
-    {
-        $cache = Core\Cache::init();
-        $cache->flush(); 
-    }
 
     public function tearDown()
     {
